@@ -371,9 +371,9 @@ void LCD_Char(uint8_t c)
 {
 	uint8_t x = 0;
 	temp_char[0] = DATA; 	// DATA descriptor															// ?
-	for (x=1; x<5; x++)
+	for (x=0; x<5; x++)
 	{
-		temp_char[x] = LCD_Buffer[c*5+x];
+		temp_char[x+1] = LCD_Buffer[c*5+x];
 	}
 	temp_char[6] = 0;
 	HAL_I2C_Master_Transmit(&hi2c1, OLED_adress, temp_char, 7,1000);
