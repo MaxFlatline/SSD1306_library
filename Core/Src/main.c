@@ -22,10 +22,10 @@
 #include "i2c.h"
 #include "usart.h"
 #include "gpio.h"
-#include "oled096.h"
+
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-
+#include "oled096.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -105,10 +105,11 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-    /* USER CODE END WHILE */
 		LCD_Goto(52,5);
 		OLED_num_to_str(Counter++,5);
 		HAL_Delay(1);
+    /* USER CODE END WHILE */
+
     /* USER CODE BEGIN 3 */
   }
   /* USER CODE END 3 */
