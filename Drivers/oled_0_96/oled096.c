@@ -378,10 +378,17 @@ void LCD_Char(uint8_t c)
 	temp_char[6] = 0;
 	HAL_I2C_Master_Transmit(&hi2c1, OLED_adress, temp_char, 7,1000);
 
-	LCD_X += 8;
-	if(LCD_X>OLED_WIDTH)
+	LCD_X += 6;
+	if(LCD_X>OLED_WIDTH-2)
 	{
+		if(LCD_X > 6){
+			LCD_Y = 0;
+		}
+		else{
+			LCD_Y++;
+		}
 		LCD_X = OLED_DEFAULT_SPACE;
+		LCD_Goto(LCD_X,LCD_Y);
 	}
 }
 
