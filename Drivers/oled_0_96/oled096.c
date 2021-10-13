@@ -310,6 +310,9 @@ void LCD_Char(uint8_t c)
 	uint8_t x = 0;
 	temp_char[0] = DATA; 	// DATA descriptor
 	uint8_t offset = Char_to_buffer_offset(c);
+
+	if(!offset) return; //If desired char is not presented in LCD_Buffer exit the function
+
 	for (x=0; x<5; x++)
 	{
 		temp_char[x+1] = LCD_Buffer[c*5-5*offset+x];
