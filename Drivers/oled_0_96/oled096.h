@@ -55,8 +55,9 @@
 
 /* USER CODE BEGIN PV */
 /* Imported variables ---------------------------------------------------------*/
-extern uint8_t temp_char[7];
+extern uint8_t LCD_Buffer[OLED_WIDTH * OLED_HEIGHT / 8];
 
+extern uint8_t temp_char[7];
 extern unsigned char LCD_X,LCD_Y;  //Cursor coordinates
 /* private variables ---------------------------------------------------------*/
 

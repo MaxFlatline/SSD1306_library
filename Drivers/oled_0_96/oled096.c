@@ -18,12 +18,12 @@ OLED_HandleTypeDef OLED096;
 
 /* Global variables END*/
 
-
+uint8_t LCD_Buffer[OLED_WIDTH * OLED_HEIGHT / 8];
 uint8_t temp_char[7] = {0,0,0,0,0,0,0}; 											// ?
 
 unsigned char LCD_X,LCD_Y;  														//Cursor coordinates
 
-static const uint8_t LCD_Buffer[0x320] =
+static const uint8_t Font_6x6_RuEng[0x320] =
 {
     //-- 32 English + symbols
 	0x00, 0x00, 0x00, 0x00, 0x00,// 20 space
@@ -315,11 +315,11 @@ void LCD_Char(uint8_t c)
 	temp_char[0] = DATA; 	// DATA descriptor
 	uint8_t offset = Char_to_buffer_offset(c);
 
-	if(!offset) return; //If desired char is not presented in LCD_Buffer exit the function
+	if(!offset) return; //If desired char is not presented in Font_6x6_RuEng exit the function
 
 	for (x=0; x<5; x++)
 	{
-		temp_char[x+1] = LCD_Buffer[c*5-5*offset+x];
+		temp_char[x+1] = Font_6x6_RuEng[c*5-5*offset+x];
 	}
 	temp_char[6] = 0;
 	HAL_I2C_Master_Transmit(&hi2c1, OLED_adress, temp_char, 7,1000);
