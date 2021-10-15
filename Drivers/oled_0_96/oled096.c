@@ -247,25 +247,28 @@ void LCD_Goto(unsigned char x, unsigned char y)
 	sendCommand(0x10 | (x >> 4));
 }
 
-
+/*
+ * @brief Function set's all of display colors to black
+ *
+ * @returns  Nothing
+ *
+ */
 void LCD_Clear(void)
 {
-	unsigned short i;
-	unsigned short x = 0;
-	unsigned short y = 0;
-	LCD_Goto(0,0);
+	uint8_t temp_buffer[9] = {0,0,0,0,0,0,0,0,0};
 
-	for (i=0; i < (OLED_BUFFERSIZE); i++) //(SSD1306_LCDWIDTH*SSD1306_LCDHEIGHT/8)
+	temp_buffer[0] = DATA;
+
+	LCD_Goto(0,0);
+	for (LCD_Y=1; LCD_Y < (OLED_HEIGHT/8); LCD_Y++)
 	{
-		LCD_Char(' ');
-		x ++;
-		if(x > OLED_WIDTH)
+		for(LCD_X=0; LCD_X < (OLED_WIDTH/8); LCD_X++)
 		{
-			x = 0;
-			y++;
-			LCD_Goto(0,y);
+			HAL_I2C_Master_Transmit(&hi2c1, OLED_adress, temp_buffer, 9,1000);
 		}
+		LCD_Goto(0,LCD_Y);
 	}
+
 	LCD_X = OLED_DEFAULT_SPACE;
 	LCD_Y = 0;
 	LCD_Goto(0,OLED_DEFAULT_SPACE);
