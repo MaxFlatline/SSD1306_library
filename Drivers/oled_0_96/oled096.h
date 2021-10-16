@@ -23,34 +23,86 @@
 /* OLED COMMANDS BEGIN DEFINES */
 /* OLED commands ---------------------------------------------------------*/
 #define OLED_adress 0x78
+#define OLED_MAX_TRIALS 3
+
 #define OLED_SETCONTRAST 0x81
+#define OLED_SETCONTRAST_MAX 0xFF
+#define OLED_SETCONTRAST_MIN 0x00
+
 #define OLED_DISPLAYALLON_RESUME 0xA4
 #define OLED_DISPLAYALLON 0xA5
-#define OLED_NORMALDISPLAY 0xA6
-#define OLED_INVERTDISPLAY 0xA7
+
+#define OLED_COLOURS_INV	0xA6
+#define OLED_COLOURS_INV_TRUE	0x01
+#define OLED_COLOURS_INV_FALSE	0x00
+
 #define OLED_DISPLAYOFF 0xAE
 #define OLED_DISPLAYON 0xAF
 #define OLED_SETDISPLAYOFFSET 0xD3
+
+
+
 #define OLED_SETCOMPINS 0xDA
+#define OLED_SETCOMPINS_COM_CONF_SEQ 0x02
+#define OLED_SETCOMPINS_COM_CONF_ALT 0x12
+#define OLED_SETCOMPINS_COM_CONF_SEQ 0x02
+#define OLED_SETCOMPINS_COM_REMAP_NONE 0x02
+#define OLED_SETCOMPINS_COM_REMAP_TRUE 0x22
+
+
 #define OLED_SETVCOMDETECT 0xDB
+#define OLED_SETVCOMDETECT_TOP 0x30
+#define OLED_SETVCOMDETECT_MID 0x20
+#define OLED_SETVCOMDETECT_LOW 0x00
+
+
 #define OLED_SETDISPLAYCLOCKDIV 0xD5
+#define OLED_DISPLAYCLOCKFREQ_MIN 0x00
+#define OLED_DISPLAYCLOCKFREQ_300 0x60
+#define OLED_DISPLAYCLOCKFREQ_400 0xC0
+#define OLED_DISPLAYCLOCKFREQ_MAX 0xF0
+
 #define OLED_SETPRECHARGE 0xD9
+#define OLED_SETPRECHARGE_PHASE_1 0xF0
+#define OLED_SETPRECHARGE_PHASE_2 0x01
+
+
 #define OLED_SETMULTIPLEX 0xA8
 #define OLED_SETLOWCOLUMN 0x00
 #define OLED_SETHIGHCOLUMN 0x10
-#define OLED_SETSTARTLINE 0x40
-#define OLED_MEMORYMODE 0x20
-#define OLED_COLUMNADDR 0x21
-#define OLED_PAGEADDR   0x22
+
+#define OLED_SETSTARTLINE 		0x40
+#define OLED_STARTLINE_DEFAULT  0x00
+
+//------------------IMAGE ORIENTATION COMMANDS--------------//
 #define OLED_COMSCANINC 0xC0
 #define OLED_COMSCANDEC 0xC8
-#define OLED_SEGREMAP 0xA0
+
+#define OLED_SEGREMAP 			0xA0
+#define OLED_SEGREMAP_0_SEG0 	0x00
+#define OLED_SEGREMAP_127_SEG0 	0x01
+//------------------IMAGE ORIENTATION COMMANDS END-----------//
+
+
+#define OLED_MEMORYMODE 0x20
+#define OLED_MEMORYMODE_PGE 0x10
+#define OLED_MEMORYMODE_HOR 0x00
+#define OLED_MEMORYMODE_VER 0x01
+
+#define OLED_COLUMNADDR 0x21
+#define OLED_PAGEADDR   0x22
+
+
+
+
 #define OLED_CHARGEPUMP 0x8D
+#define OLED_CHARGEPUMP_ON 0x14
+#define OLED_CHARGEPUMP_OFF 0x10
+
 #define OLED_SWITCHCAPVCC 0x2
 #define OLED_NOP 0xE3
 
-//#define COMMAND 0x00
-//#define DATA   0x40
+
 /* OLED COMMANDS END DEFINES */
 
 /* USER CODE BEGIN PV */
@@ -78,6 +130,25 @@ typedef enum
 	OLED_TIMEOUT  = 0x03U,
 	OLED_DESCFAIL = 0x04U
 } OLED_StatusTypeDef;
+/**
+  *  END
+  */
+
+
+
+/**
+  * @brief  OLED Error Management
+  */
+typedef enum
+{
+	SUCCES		= 0x00U,
+	FAULT 		= 0x01U
+}OLED_ErrorHandlerType;
+/**
+  *  END
+  */
+
+
 
 typedef enum
 {
@@ -85,12 +156,27 @@ typedef enum
 	DATA    	  = 0x40U
 } OLED_DataType;
 
-typedef struct __OLED_HandleTypeDef
+/**
+  * @brief  OLED data transmit function type
+  */
+typedef OLED_StatusTypeDef (*DataSend)(OLED_DataType Descriptor, const uint8_t  Data);
+/**
+  *  END
+  */
+
+
+
+
+/**
+  * @brief  OLED main structure
+  */
+typedef struct
 {
-	uint8_t AddressI2C; // Can be 111100 or 111101, default 111100(for STM HAL left shift needed)
+	uint8_t AddressI2C; 				// Can be 111100 or 111101, default 111100(for STM HAL left shift needed)
 
-	OLED_StatusTypeDef (*DataSend)(OLED_DataType Descriptor, const uint8_t * Data);//Abstract data send function
+	DataSend DataSend;					//Abstract data send function
 
+	uint8_t OLEDErrorSolvingTrials;		//Amount of tries to reach OLED
 
 }OLED_HandleTypeDef;
 
@@ -119,14 +205,15 @@ extern OLED_HandleTypeDef OLED096;
 /* Private function prototypes -----------------------------------------------*/
 /* OLED FUNCTIONS BEGIN PROTOTYPES */
 void i2c_init(void);
-void OLED_init(OLED_HandleTypeDef* oled);
+OLED_StatusTypeDef OLED_Init(OLED_HandleTypeDef* oled);
 void sendCommand(unsigned char command);
 void LCD_Clear(void);
 void Set_Contrast(uint8_t value);
 
 void LCD_Char(uint8_t c);
 
-void LCD_Goto(unsigned char x, unsigned char y);
+void LCD_Goto(uint8_t x, uint8_t y);
+
 void LCD_DrawImage(unsigned char num_image);
 void OLED_string(char *string);
 void OLED_num_to_str(unsigned int value, unsigned char nDigit);
@@ -134,10 +221,5 @@ void OLED_num_to_str(unsigned int value, unsigned char nDigit);
 
 /* OLED Function refactored */
 
-
-
-
-
-
-OLED_StatusTypeDef OLED_SendData (OLED_DataType Descriptor, const uint8_t * Data);
-
+OLED_StatusTypeDef OLED_SendData (OLED_DataType Descriptor, const uint8_t  Data);
+OLED_ErrorHandlerType OLED_ErrorHandler (OLED_HandleTypeDef * OLED);

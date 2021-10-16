@@ -91,7 +91,10 @@ int main(void)
   MX_I2C1_Init();
   /* USER CODE BEGIN 2 */
   HAL_Delay(100);
-  OLED_init(&OLED096);
+
+  if(OLED_Init(&OLED096) != OLED_OK){
+	  OLED_ErrorHandler (&OLED096);
+  }
   LCD_Clear();
   LCD_Goto(0,0);
   OLED_string("FUCK Drive 2!");

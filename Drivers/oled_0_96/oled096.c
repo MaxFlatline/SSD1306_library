@@ -192,6 +192,10 @@ static const uint8_t Font_6x6_RuEng[0x320] =
 };
 
 
+//===========================================================================
+
+static void OLED_DeInit(OLED_HandleTypeDef* OLED);
+
 void sendCommand(uint8_t command_s)
 {
 	uint8_t BufferCommand[2];
@@ -211,13 +215,13 @@ void sendCommand(uint8_t command_s)
  * @[IN]data (enum Data/Command) Descriptor
  * 			 uint8_t 			 Data to send
  */
-OLED_StatusTypeDef OLED_SendData (OLED_DataType Descriptor, const uint8_t * Data){
+OLED_StatusTypeDef OLED_SendData (OLED_DataType Descriptor, const uint8_t  Data){
 	OLED_StatusTypeDef Result = OLED_OK;
 
 	if(Descriptor == DATA || Descriptor == COMMAND){
 		uint8_t BufferData[2];
 		BufferData[0] = Descriptor;
-		BufferData[1] = *Data;
+		BufferData[1] = Data;
 
 		Result = HAL_I2C_Master_Transmit(&hi2c1,OLED_adress,BufferData,2,100);
 	}
@@ -238,7 +242,7 @@ void sendData(uint8_t data_s)
 	HAL_I2C_Master_Transmit(&hi2c1,OLED_adress,BufferData,2,100);
 }
 
-void LCD_Goto(unsigned char x, unsigned char y)
+void LCD_Goto(uint8_t x, uint8_t y)
 {
 	LCD_X = x;
 	LCD_Y = y;
@@ -255,23 +259,22 @@ void LCD_Goto(unsigned char x, unsigned char y)
  */
 void LCD_Clear(void)
 {
-	uint8_t temp_buffer[9] = {0,0,0,0,0,0,0,0,0};
+    uint8_t temp_buffer[9] = {0,0,0,0,0,0,0,0,0};
 
-	temp_buffer[0] = DATA;
+    temp_buffer[0] = DATA;
 
-	LCD_Goto(0,0);
-	for (LCD_Y=1; LCD_Y < (OLED_HEIGHT/8); LCD_Y++)
-	{
-		for(LCD_X=0; LCD_X < (OLED_WIDTH/8); LCD_X++)
-		{
-			HAL_I2C_Master_Transmit(&hi2c1, OLED_adress, temp_buffer, 9,1000);
-		}
-		LCD_Goto(0,LCD_Y);
-	}
+    for (LCD_Y=0; LCD_Y <= (OLED_HEIGHT/8); LCD_Y++)
+    {
+        LCD_Goto(0,LCD_Y);
+        for(LCD_X=0; LCD_X < (OLED_WIDTH/8); LCD_X++)
+        {
+            HAL_I2C_Master_Transmit(&hi2c1, OLED_adress, temp_buffer, 9,1000);
+        }
+    }
 
-	LCD_X = OLED_DEFAULT_SPACE;
-	LCD_Y = 0;
-	LCD_Goto(0,OLED_DEFAULT_SPACE);
+    LCD_X = OLED_DEFAULT_SPACE;
+    LCD_Y = 0;
+    LCD_Goto(0,OLED_DEFAULT_SPACE);
 }
 
 /*
@@ -373,60 +376,99 @@ void OLED_num_to_str(unsigned int value, unsigned char nDigit)
  *
  */
 
-void OLED_init(OLED_HandleTypeDef* oled)
+OLED_StatusTypeDef OLED_Init(OLED_HandleTypeDef* oled)
 {
+	OLED_StatusTypeDef Result = OLED_OK;
 
 	oled->DataSend = OLED_SendData;
 	oled->AddressI2C = 1;
 
 	// Turn display off
-	sendCommand(OLED_DISPLAYOFF);
+	Result = oled->DataSend(COMMAND, OLED_DISPLAYOFF);
 
-	sendCommand(OLED_SETDISPLAYCLOCKDIV);
-	sendCommand(0x80);
 
-	sendCommand(OLED_SETMULTIPLEX);
-	//sendCommand(0x1F);//128x32
-	sendCommand(0x3F);//128x64
+	Result = oled->DataSend(COMMAND, OLED_SETDISPLAYCLOCKDIV);
+	Result = oled->DataSend(COMMAND, OLED_DISPLAYCLOCKFREQ_MAX);
 
-	sendCommand(OLED_SETDISPLAYOFFSET);
-	sendCommand(0x00);
 
-	sendCommand(OLED_SETSTARTLINE | 0x00);//0
+	Result = oled->DataSend(COMMAND, OLED_SETMULTIPLEX);
+	Result = oled->DataSend(COMMAND, OLED_HEIGHT-1);
 
-	// We use internal charge pump
-	sendCommand(OLED_CHARGEPUMP);
-	sendCommand(0x14);
+	Result = oled->DataSend(COMMAND, OLED_SETDISPLAYOFFSET);
+	Result = oled->DataSend(COMMAND, 0x00);
+
+	Result = oled->DataSend(COMMAND, OLED_SETSTARTLINE | OLED_STARTLINE_DEFAULT);
 
 	// Horizontal memory mode
-	sendCommand(OLED_MEMORYMODE);
-	sendCommand(0x00);
+	Result = oled->DataSend(COMMAND, OLED_MEMORYMODE);
+	Result = oled->DataSend(COMMAND, OLED_MEMORYMODE_HOR);
 
-	sendCommand(OLED_SEGREMAP | 0x1);
+	Result = oled->DataSend(COMMAND, OLED_SEGREMAP | OLED_SEGREMAP_127_SEG0);
 
-	sendCommand(OLED_COMSCANDEC);
 
-	sendCommand(OLED_SETCOMPINS);
-	//sendCommand(0x02);//128x32
-	sendCommand(0x12);//128x64
+	Result = oled->DataSend(COMMAND, OLED_COMSCANDEC);
 
-	// Max contrast
-	sendCommand(OLED_SETCONTRAST);
-	//sendCommand(0x0F);//0xCF
-	sendCommand(0xCF);//0xCF
+	Result = oled->DataSend(COMMAND, OLED_SETCOMPINS);
+	Result = oled->DataSend(COMMAND, OLED_SETCOMPINS_COM_CONF_ALT | OLED_SETCOMPINS_COM_REMAP_NONE);
 
-	sendCommand(OLED_SETPRECHARGE);
-	sendCommand(0xF1);
 
-	sendCommand(OLED_SETVCOMDETECT);
-	//sendCommand(0x10);//0x40
-	sendCommand(0x40);//0x40
+	Result = oled->DataSend(COMMAND, OLED_SETCONTRAST);
+	Result = oled->DataSend(COMMAND, OLED_SETCONTRAST_MAX);
 
-	sendCommand(OLED_DISPLAYALLON_RESUME);
 
-	// Non-inverted display
-	sendCommand(OLED_NORMALDISPLAY);
+	Result = oled->DataSend(COMMAND, OLED_SETPRECHARGE);
+	Result = oled->DataSend(COMMAND, OLED_SETPRECHARGE_PHASE_1 | OLED_SETPRECHARGE_PHASE_2);
+
+	Result = oled->DataSend(COMMAND, OLED_SETVCOMDETECT);
+	Result = oled->DataSend(COMMAND, OLED_SETVCOMDETECT_MID);
+
+	Result = oled->DataSend(COMMAND, OLED_DISPLAYALLON);
+	Result = oled->DataSend(COMMAND, OLED_DISPLAYALLON_RESUME);
+
+
+	// Non-inverted colours of display
+	Result = oled->DataSend(COMMAND, OLED_COLOURS_INV | OLED_COLOURS_INV_FALSE);
+
+	// We use internal charge pump
+	Result = oled->DataSend(COMMAND, OLED_CHARGEPUMP);
+	Result = oled->DataSend(COMMAND, OLED_CHARGEPUMP_ON);
 
 	// Turn display back on
-	sendCommand(OLED_DISPLAYON);
+	Result = oled->DataSend(COMMAND, OLED_DISPLAYON);
+
+	return Result;
 }
+
+static void OLED_DeInit(OLED_HandleTypeDef* OLED){
+
+	OLED->DataSend(COMMAND, OLED_DISPLAYOFF);
+
+	HAL_I2C_DeInit(&hi2c1);
+	MX_I2C1_Init();
+
+}
+
+
+/*
+ *
+ *
+ * @brief Error management routine
+ *
+ * @returns bool status of error handeling
+ *
+ */
+
+OLED_ErrorHandlerType OLED_ErrorHandler (OLED_HandleTypeDef * OLED){
+	OLED_StatusTypeDef Result = OLED_OK;
+	OLED_DeInit(OLED);
+	if(OLED_Init(OLED) != OLED_OK && OLED->OLEDErrorSolvingTrials < OLED_MAX_TRIALS){
+		OLED->OLEDErrorSolvingTrials++;
+		//OLED_ErrorHandler
+	}
+	else{
+
+	}
+
+	return SUCCES;
+}
+
