@@ -12,6 +12,13 @@
 #include <stdint.h>
 /* USER CODE END Includes */
 
+/* OLED PARAMETERS BEGIN DEFINES */
+/* OLED parameters ---------------------------------------------------------*/
+#define OLED_WIDTH 128
+#define OLED_HEIGHT 64
+#define OLED_BUFFERSIZE (OLED_WIDTH*OLED_HEIGHT)/8
+#define OLED_DEFAULT_SPACE 0
+/* OLED PARAMETERS END DEFINES */
 
 /* OLED COMMANDS BEGIN DEFINES */
 /* OLED commands ---------------------------------------------------------*/
@@ -42,23 +49,15 @@
 #define OLED_SWITCHCAPVCC 0x2
 #define OLED_NOP 0xE3
 
-#define OLED_WIDTH 128
-#define OLED_HEIGHT 64
-#define OLED_BUFFERSIZE (OLED_WIDTH*OLED_HEIGHT)/8
-#define OLED_DEFAULT_SPACE 5
-
 //#define COMMAND 0x00
 //#define DATA   0x40
 /* OLED COMMANDS END DEFINES */
 
 /* USER CODE BEGIN PV */
 /* Imported variables ---------------------------------------------------------*/
-
-
-extern uint8_t temp[2];
+extern uint8_t LCD_Buffer[OLED_WIDTH * OLED_HEIGHT / 8];
 
 extern uint8_t temp_char[7];
-
 extern unsigned char LCD_X,LCD_Y;  //Cursor coordinates
 /* private variables ---------------------------------------------------------*/
 
@@ -67,7 +66,6 @@ extern unsigned char LCD_X,LCD_Y;  //Cursor coordinates
 
 
 /* Private types -------------------------------------------------------------*/
-
 
 /**
   * @brief  OLED communication statuses
@@ -124,6 +122,7 @@ void i2c_init(void);
 void OLED_init(OLED_HandleTypeDef* oled);
 void sendCommand(unsigned char command);
 void LCD_Clear(void);
+void Set_Contrast(uint8_t value);
 
 void LCD_Char(uint8_t c);
 
