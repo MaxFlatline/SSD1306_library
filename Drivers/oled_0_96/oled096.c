@@ -18,7 +18,9 @@ OLED_HandleTypeDef OLED096;
 
 /* Global variables END*/
 
-uint8_t LCD_Buffer[OLED_WIDTH * OLED_HEIGHT / 8];
+//uint8_t LCD_Buffer[OLED_WIDTH * OLED_HEIGHT / 8];
+
+
 uint8_t temp_char[7] = {0,0,0,0,0,0,0}; 											// ?
 
 unsigned char LCD_X,LCD_Y;  														//Cursor coordinates
@@ -192,9 +194,19 @@ static const uint8_t Font_6x6_RuEng[0x320] =
 };
 
 
+//======Private function prototypes==========================================
+static OLED_ErrorHandlerType OLED_ErrorHandler (OLED_HandleTypeDef * OLED);
+
+static OLED_StatusTypeDef OLED_DeInit(OLED_HandleTypeDef* OLED);
+
+static OLED_StatusTypeDef OLED_FrameMem_Init (OLED_HandleTypeDef * OLED);
+static OLED_StatusTypeDef OLED_FrameMem_DeInit (OLED_HandleTypeDef * OLED);
 //===========================================================================
 
-static void OLED_DeInit(OLED_HandleTypeDef* OLED);
+
+
+
+
 
 void sendCommand(uint8_t command_s)
 {
@@ -215,7 +227,7 @@ void sendCommand(uint8_t command_s)
  * @[IN]data (enum Data/Command) Descriptor
  * 			 uint8_t 			 Data to send
  */
-OLED_StatusTypeDef OLED_SendData (OLED_DataType Descriptor, const uint8_t  Data){
+OLED_StatusTypeDef OLED_SendData (OLED_DataType Descriptor, const uint8_t Data){
 	OLED_StatusTypeDef Result = OLED_OK;
 
 	if(Descriptor == DATA || Descriptor == COMMAND){
@@ -287,8 +299,8 @@ void LCD_Clear(void)
  */
 void Set_Contrast(uint8_t value)
 {
-	sendCommand(OLED_SETCONTRAST);
-	sendCommand(value);
+	OLED_SendData (COMMAND, OLED_SETCONTRAST);
+	OLED_SendData (DATA, value);
 }
 
 /*
@@ -436,16 +448,24 @@ OLED_StatusTypeDef OLED_Init(OLED_HandleTypeDef* oled)
 	// Turn display back on
 	Result = oled->DataSend(COMMAND, OLED_DISPLAYON);
 
+	// Memory allocation for frame buffer
+	Result = OLED_FrameMem_Init (oled);
+
+
+	if(Result != OLED_OK){
+		  OLED_ErrorHandler (oled);
+	}
+
 	return Result;
 }
 
-static void OLED_DeInit(OLED_HandleTypeDef* OLED){
-
+static OLED_StatusTypeDef OLED_DeInit(OLED_HandleTypeDef* OLED){
+	OLED_StatusTypeDef Result = OLED_OK;
 	OLED->DataSend(COMMAND, OLED_DISPLAYOFF);
-
+	Result = OLED_FrameMem_DeInit (OLED);
 	HAL_I2C_DeInit(&hi2c1);
 	MX_I2C1_Init();
-
+	return Result;
 }
 
 
@@ -458,17 +478,32 @@ static void OLED_DeInit(OLED_HandleTypeDef* OLED){
  *
  */
 
-OLED_ErrorHandlerType OLED_ErrorHandler (OLED_HandleTypeDef * OLED){
-	OLED_StatusTypeDef Result = OLED_OK;
+static OLED_ErrorHandlerType OLED_ErrorHandler (OLED_HandleTypeDef * OLED){
+
 	OLED_DeInit(OLED);
 	if(OLED_Init(OLED) != OLED_OK && OLED->OLEDErrorSolvingTrials < OLED_MAX_TRIALS){
 		OLED->OLEDErrorSolvingTrials++;
-		//OLED_ErrorHandler
+		return OLED_ErrorHandler(OLED);
 	}
 	else{
-
+		return FAULT;
 	}
-
+	OLED->OLEDErrorSolvingTrials = 0;
 	return SUCCES;
 }
 
+static OLED_StatusTypeDef OLED_FrameMem_Init (OLED_HandleTypeDef * OLED){
+	OLED->FrameMem = malloc(OLED_WIDTH * OLED_HEIGHT);
+	if(OLED->FrameMem == NULL){
+		return OLED_ERROR;
+	}
+	return OLED_OK;
+}
+
+static OLED_StatusTypeDef OLED_FrameMem_DeInit (OLED_HandleTypeDef * OLED){
+	if(OLED->FrameMem == NULL){
+		return OLED_ERROR;
+	}
+	free(OLED->FrameMem);
+	return OLED_OK;
+}

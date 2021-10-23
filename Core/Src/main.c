@@ -66,7 +66,7 @@ void SystemClock_Config(void);
 int main(void)
 {
   /* USER CODE BEGIN 1 */
-  uint16_t Counter = 0;
+
   /* USER CODE END 1 */
 
   /* MCU Configuration--------------------------------------------------------*/
@@ -90,27 +90,35 @@ int main(void)
   MX_USART2_UART_Init();
   MX_I2C1_Init();
   /* USER CODE BEGIN 2 */
-  HAL_Delay(100);
 
-  if(OLED_Init(&OLED096) != OLED_OK){
-	  OLED_ErrorHandler (&OLED096);
-  }
+
+  OLED_Init(&OLED096);
+
   LCD_Clear();
   LCD_Goto(0,0);
   OLED_string("FUCK Drive 2!");
   LCD_Goto(0,1);
-  OLED_string("I2C BUS OLED SSD1306");
+  OLED_string("FUCK Drive 2!");
   LCD_Goto(0,2);
-  OLED_string("LCD OLED 128x64 0,96");
+  OLED_string("FUCK Drive 2!");
+  LCD_Goto(0,3);
+  OLED_string("FUCK Drive 2!");
+  LCD_Goto(0,4);
+  OLED_string("FUCK Drive 2!");
+  LCD_Goto(0,5);
+  OLED_string("FUCK Drive 2!");
+  LCD_Goto(0,6);
+  OLED_string("FUCK Drive 2!");
+  LCD_Goto(0,7);
+  OLED_string("FUCK Drive 2!");
+
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-		LCD_Goto(52,5);
-		OLED_num_to_str(Counter++,5);
-		HAL_Delay(1);
+
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */

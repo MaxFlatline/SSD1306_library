@@ -178,6 +178,8 @@ typedef struct
 
 	uint8_t OLEDErrorSolvingTrials;		//Amount of tries to reach OLED
 
+	uint8_t * FrameMem;					//Pointer to heap area for frame buffer
+
 }OLED_HandleTypeDef;
 
 
@@ -222,4 +224,4 @@ void OLED_num_to_str(unsigned int value, unsigned char nDigit);
 /* OLED Function refactored */
 
 OLED_StatusTypeDef OLED_SendData (OLED_DataType Descriptor, const uint8_t  Data);
-OLED_ErrorHandlerType OLED_ErrorHandler (OLED_HandleTypeDef * OLED);
+
