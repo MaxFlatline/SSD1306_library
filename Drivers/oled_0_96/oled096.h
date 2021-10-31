@@ -1,9 +1,16 @@
-/*
- * oled096.h
- *
- *  Created on: Sep 18, 2021
- *      Author: Maxim Hodnenko
- */
+/**
+  ******************************************************************************
+  * @file           : oled096.h
+  * @brief          : Header for oled096.c file.
+  *                   This file contains the common defines of the application.
+  ******************************************************************************
+  * @attention
+  *
+  *  Created on: Sep 18, 2021
+  *      Author: Maxim Hodnenko
+  *
+  ******************************************************************************
+  */
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */

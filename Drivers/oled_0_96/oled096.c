@@ -1,10 +1,16 @@
-/*
- * oled096.c
- *
- *  Created on: Sep 18, 2021
- *      Author: Maxim Hodnenko
- */
 
+/**
+  ******************************************************************************
+  * @file           : oled096.c
+  * @brief          : This file provides code for oled096
+  ******************************************************************************
+  * @attention
+  *
+  *  Created on: Sep 18, 2021
+  *      Author: Maxim Hodnenko
+  *
+  ******************************************************************************
+  */
 
 #include "oled096.h"
 
@@ -217,7 +223,7 @@ void sendCommand(uint8_t command_s)
 	HAL_I2C_Master_Transmit(&hi2c1,OLED_adress,BufferCommand,2,100);
 }
 
-/*
+/**
  * @brief Function sends data to OLED unit
  *
  * @returns  Status of operation
@@ -263,7 +269,7 @@ void LCD_Goto(uint8_t x, uint8_t y)
 	sendCommand(0x10 | (x >> 4));
 }
 
-/*
+/**
  * @brief Function set's all of display colors to black
  *
  * @returns  Nothing
@@ -289,7 +295,7 @@ void LCD_Clear(void)
     LCD_Goto(0,OLED_DEFAULT_SPACE);
 }
 
-/*
+/**
  * @brief Function sets OLED contrast to desired value
  *
  * @returns  Nothing
@@ -303,7 +309,7 @@ void Set_Contrast(uint8_t value)
 	OLED_SendData (DATA, value);
 }
 
-/*
+/**
  * @brief Function returns offset for matching ASCII
  * input with LCD_Buffer
  *
@@ -363,7 +369,7 @@ void OLED_string(char *string)
 	}
 }
 
-/*
+/**
  * @returns Nothing
  *
  * @data value binary
@@ -469,7 +475,7 @@ static OLED_StatusTypeDef OLED_DeInit(OLED_HandleTypeDef* OLED){
 }
 
 
-/*
+/**
  *
  *
  * @brief Error management routine
