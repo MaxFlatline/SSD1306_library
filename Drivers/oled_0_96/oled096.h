@@ -34,7 +34,7 @@
 
 /* OLED COMMANDS BEGIN DEFINES */
 /* OLED commands ---------------------------------------------------------*/
-#define OLED_adress 0x78
+#define OLED_ADRESS 0x78
 #define OLED_MAX_TRIALS 3
 
 #define OLED_SETCONTRAST 0x81

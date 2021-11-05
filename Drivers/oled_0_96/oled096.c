@@ -49,7 +49,7 @@ OLED_StatusTypeDef OLED_Init(OLED_HandleTypeDef* OLED)
 
 	uint8_t tempBuf = 0;
 	OLED->DataSend = OLED_SendData;
-	OLED->AddressI2C = OLED_adress;
+	OLED->AddressI2C = OLED_ADRESS;
 	OLED->Heigth = OLED_096_PAGES;
 	OLED->Width = OLED_096_SEGS;
 
@@ -365,7 +365,7 @@ void LCD_Char(uint8_t c)
 		temp_char[x+1] = Font_6x6_RuEng[c*5-5*offset+x];
 	}
 	temp_char[6] = 0;
-	HAL_I2C_Master_Transmit(&hi2c1, OLED_adress, temp_char, 7,1000);
+	HAL_I2C_Master_Transmit(&hi2c1, OLED_ADRESS, temp_char, 7,1000);
 
 	LCD_X += 6;
 	if(LCD_X>=OLED_WIDTH-2)
