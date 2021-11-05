@@ -44,6 +44,7 @@
 #define OLED_DISPLAYALLON_RESUME 0xA4
 #define OLED_DISPLAYALLON 0xA5
 
+//TODO: Изменить на COLORS (используем американское произношение вместо британского?)
 #define OLED_COLOURS_INV	0xA6
 #define OLED_COLOURS_INV_TRUE	0x01
 #define OLED_COLOURS_INV_FALSE	0x00
@@ -154,8 +155,8 @@ typedef enum
   */
 typedef enum
 {
-	SUCCES		= 0x00U,
-	FAULT 		= 0x01U
+	HANDLE_SUCCESS		= 0x00U,
+	HANDLE_FAULT 		= 0x01U
 }OLED_ErrorHandlerType;
 /**
   *  END

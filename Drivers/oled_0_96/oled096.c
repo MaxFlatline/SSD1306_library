@@ -18,9 +18,6 @@ OLED_HandleTypeDef OLED096;
 
 /* Global variables END*/
 
-//uint8_t LCD_Buffer[OLED_WIDTH * OLED_HEIGHT / 8];
-
-
 uint8_t temp_char[7] = {0,0,0,0,0,0,0}; 											// ?
 
 unsigned char LCD_X,LCD_Y;  														//Cursor coordinates
@@ -36,75 +33,16 @@ static OLED_StatusTypeDef OLED_SendData (OLED_DataType Descriptor, uint8_t Addre
 static OLED_StatusTypeDef OLED_GDDR_Clear (OLED_HandleTypeDef* OLED);
 //===========================================================================
 
-
-
-/*
- * @brief Function sends data to OLED unit
+/**
+ * @brief Function initializes &OLED and clears it's screen
  *
  * @returns  Status of operation
- * 			 default : Same as HAL_I2C_Transmit
- *			 4 		: Incorrect descriptor
+ * 			 default : Same as HAL_I2C_Mem_Write
+ *			 4 		: Transmit error
  *
- * @[IN]data (enum Data/Command) Descriptor
- * 			 uint8_t 			 Data to send
+ * @[IN]data &OLED - Display object
+ *
  */
-static OLED_StatusTypeDef OLED_SendData (OLED_DataType Descriptor, uint8_t AddressI2C, uint8_t *Data, size_t length){
-
-	OLED_StatusTypeDef Result = OLED_OK;
-
-	if(Descriptor == DATA || Descriptor == COMMAND){
-		Result = HAL_I2C_Mem_Write(&hi2c1, (uint16_t)AddressI2C, (uint16_t)Descriptor, I2C_MEMADD_SIZE_8BIT, Data, length,100);
-	}
-	else{
-		Result = OLED_DESCFAIL;
-	}
-
-	return Result;
-}
-
-OLED_StatusTypeDef OLED_FrameRefresh (OLED_HandleTypeDef *OLED){
-	OLED_StatusTypeDef Result = OLED_OK;
-	if(OLED->FrameMem == NULL){
-		return OLED_ERROR;
-	}
-	Result = OLED->DataSend(DATA, OLED->AddressI2C, OLED->FrameMem, OLED->FrameSize);
-	return Result;
-}
-
-
-
-
-
-OLED_StatusTypeDef OLED_DrawTestImage(OLED_HandleTypeDef *OLED){
-	if(OLED->FrameMem == NULL){
-		return OLED_ERROR;
-	}
-
-	uint8_t t = 0;
-	uint8_t tempBuf = 0;
-	for (size_t i = 0; i < OLED->FrameSize; i++)
-	{
-
-		if(t == 8)
-		{
-			tempBuf = ~tempBuf;
-			t = 0;
-		}
-		*(OLED->FrameMem + i) = tempBuf;
-		t++;
-
-	}
-	return OLED_OK;
-}
-
-
-
-
-
-
-
-
-
 OLED_StatusTypeDef OLED_Init(OLED_HandleTypeDef* OLED)
 {
 	OLED_StatusTypeDef Result = OLED_OK;
@@ -201,6 +139,16 @@ OLED_StatusTypeDef OLED_Init(OLED_HandleTypeDef* OLED)
 	return Result;
 }
 
+/**
+ * @brief Function deinitialize &OLED and frees it's FrameMem
+ *
+ * @returns  Status of operation
+ * 			 default 			: OLED_OK
+ *			 OLED_ERROR 		: FrameMem is not initialized(NULL)
+ *
+ * @[IN]data &OLED - Display object
+ *
+ */
 OLED_StatusTypeDef OLED_DeInit(OLED_HandleTypeDef* OLED){
 	OLED_StatusTypeDef Result = OLED_OK;
 	uint8_t tempBuf = OLED_DISPLAYOFF;
@@ -212,8 +160,84 @@ OLED_StatusTypeDef OLED_DeInit(OLED_HandleTypeDef* OLED){
 	return Result;
 }
 
+/**
+ * @brief Function sends data to OLED unit
+ *
+ * @returns  Status of operation
+ * 			 default : Same as HAL_I2C_Transmit
+ *			 4 		: Incorrect descriptor
+ *
+ * @[IN]data (enum Data/Command) Descriptor
+ * 			 uint8_t 			 Data to send
+ */
+static OLED_StatusTypeDef OLED_SendData (OLED_DataType Descriptor, uint8_t AddressI2C, uint8_t *Data, size_t length){
 
-/*
+	OLED_StatusTypeDef Result = OLED_OK;
+
+	if(Descriptor == DATA || Descriptor == COMMAND){
+		Result = HAL_I2C_Mem_Write(&hi2c1, (uint16_t)AddressI2C, (uint16_t)Descriptor, I2C_MEMADD_SIZE_8BIT, Data, length,100);
+	}
+	else{
+		Result = OLED_DESCFAIL;
+	}
+
+	return Result;
+}
+
+/**
+ * @brief Function refreshes OLED screen with current frame stored in &OLED
+ *
+ * @returns  Status of operation
+ * 			 default : Same as HAL_I2C_Mem_Write
+ *			 4 		: Transmit error
+ *
+ * @[IN]data &OLED - Display object
+ *
+ */
+OLED_StatusTypeDef OLED_FrameRefresh (OLED_HandleTypeDef *OLED){
+	OLED_StatusTypeDef Result = OLED_OK;
+	if(OLED->FrameMem == NULL){
+		return OLED_ERROR;
+	}
+	Result = OLED->DataSend(DATA, OLED->AddressI2C, OLED->FrameMem, OLED->FrameSize);
+	return Result;
+}
+
+
+/**
+ * @brief Function fills &OLED frame with test image
+ *
+ * @returns  Status of operation
+ * 			 default    : OLED_OK
+ *			 OLED_ERROR : FrameMem is not initialized(NULL)
+ *
+ * @[IN]data &OLED - Display object
+ *
+ */
+OLED_StatusTypeDef OLED_DrawTestImage(OLED_HandleTypeDef *OLED){
+	if(OLED->FrameMem == NULL){
+		return OLED_ERROR;
+	}
+
+	uint8_t t = 0;
+	uint8_t tempBuf = 0;
+	for (size_t i = 0; i < OLED->FrameSize; i++)
+	{
+
+		if(t == 8)
+		{
+			tempBuf = ~tempBuf;
+			t = 0;
+		}
+		*(OLED->FrameMem + i) = tempBuf;
+		t++;
+
+	}
+	return OLED_OK;
+}
+
+
+/**
  *
  *
  * @brief API tool for cursor positioning
@@ -221,7 +245,7 @@ OLED_StatusTypeDef OLED_DeInit(OLED_HandleTypeDef* OLED){
  * @param &OLED - Display object
  * 		  Byte, Page - coordinates
  *
- * @returns bool status of error handeling
+ * @returns bool status of error handling
  *
  */
 void OLED_Set_Cursor(OLED_HandleTypeDef* OLED, uint8_t Byte, uint8_t Page)
@@ -248,15 +272,14 @@ static OLED_StatusTypeDef OLED_GDDR_Clear (OLED_HandleTypeDef* OLED){
 }
 
 
-/*
+/**
  *
  *
  * @brief Error management routine
  *
- * @returns bool status of error handeling
+ * @returns bool status of error handling
  *
  */
-
 static OLED_ErrorHandlerType OLED_ErrorHandler (OLED_HandleTypeDef * OLED){
 
 	OLED_DeInit(OLED);
@@ -265,12 +288,22 @@ static OLED_ErrorHandlerType OLED_ErrorHandler (OLED_HandleTypeDef * OLED){
 		return OLED_ErrorHandler(OLED);
 	}
 	else{
-		return FAULT;
+		return HANDLE_FAULT;
 	}
 	OLED->OLEDErrorSolvingTrials = 0;
-	return SUCCES;
+	return HANDLE_SUCCESS;
 }
 
+/**
+ * @brief Function initializes &OLED FrameMem
+ *
+ * @returns  Status of operation
+ * 			 default 			: OLED_OK
+ *			 OLED_ERROR 		: malloc error
+ *
+ * @[IN]data &OLED - Display object
+ *
+ */
 static OLED_StatusTypeDef OLED_FrameMem_Init (OLED_HandleTypeDef * OLED){
 	OLED->FrameMem = malloc(OLED_096_PAGES * OLED_096_SEGS);
 	if(OLED->FrameMem == NULL){
@@ -279,6 +312,16 @@ static OLED_StatusTypeDef OLED_FrameMem_Init (OLED_HandleTypeDef * OLED){
 	return OLED_OK;
 }
 
+/**
+ * @brief Function deinitialize &OLED FrameMem
+ *
+ * @returns  Status of operation
+ * 			 default 			: OLED_OK
+ *			 OLED_ERROR 		: FrameMem is not initialized(NULL)
+ *
+ * @[IN]data &OLED - Display object
+ *
+ */
 static OLED_StatusTypeDef OLED_FrameMem_DeInit (OLED_HandleTypeDef * OLED){
 	if(OLED->FrameMem == NULL){
 		return OLED_ERROR;
@@ -288,7 +331,7 @@ static OLED_StatusTypeDef OLED_FrameMem_DeInit (OLED_HandleTypeDef * OLED){
 }
 
 
-/*
+/**
  * @brief Function returns offset for matching ASCII
  * input with LCD_Buffer
  *
@@ -348,7 +391,7 @@ void OLED_string(char *string)
 	}
 }
 
-/*
+/**
  * @returns Nothing
  *
  * @data value binary
@@ -374,7 +417,7 @@ void OLED_num_to_str(unsigned int value, unsigned char nDigit)
  */
 
 
-/*
+/**
  * @brief Function sets OLED contrast to desired value
  *
  * @returns  Nothing
