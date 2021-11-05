@@ -10,12 +10,17 @@
 #include "main.h"
 #include "i2c.h"
 #include <stdint.h>
+#include "Font.c"
 /* USER CODE END Includes */
 
 /* OLED PARAMETERS BEGIN DEFINES */
 /* OLED parameters ---------------------------------------------------------*/
 #define OLED_WIDTH 128
 #define OLED_HEIGHT 64
+
+#define OLED_096_SEGS 128
+#define OLED_096_PAGES 8
+
 #define OLED_BUFFERSIZE (OLED_WIDTH*OLED_HEIGHT)/8
 #define OLED_DEFAULT_SPACE 0
 /* OLED PARAMETERS END DEFINES */
@@ -92,6 +97,9 @@
 #define OLED_COLUMNADDR 0x21
 #define OLED_PAGEADDR   0x22
 
+#define OLED_SET_ADDR_PAGE_MODE 0xB0
+#define OLED_SET_CLMN_PAGE_MODE_L 0x0F
+#define OLED_SET_CLMN_PAGE_MODE_H 0x10
 
 
 
@@ -107,8 +115,6 @@
 
 /* USER CODE BEGIN PV */
 /* Imported variables ---------------------------------------------------------*/
-extern uint8_t LCD_Buffer[OLED_WIDTH * OLED_HEIGHT / 8];
-
 extern uint8_t temp_char[7];
 extern unsigned char LCD_X,LCD_Y;  //Cursor coordinates
 /* private variables ---------------------------------------------------------*/
@@ -159,13 +165,21 @@ typedef enum
 /**
   * @brief  OLED data transmit function type
   */
-typedef OLED_StatusTypeDef (*DataSend)(OLED_DataType Descriptor, const uint8_t  Data);
+typedef OLED_StatusTypeDef (*DataSend)(OLED_DataType Descriptor, uint8_t AddressI2C, uint8_t *Data, size_t length);
 /**
   *  END
   */
 
+/**
+  * @brief  OLED Cursor current position
+  */
+typedef struct
+{
+	uint8_t Page;
 
+	uint8_t Segment;
 
+} OLED_CursorCoordTypeDef;
 
 /**
   * @brief  OLED main structure
@@ -174,11 +188,19 @@ typedef struct
 {
 	uint8_t AddressI2C; 				// Can be 111100 or 111101, default 111100(for STM HAL left shift needed)
 
-	DataSend DataSend;					//Abstract data send function
+	DataSend DataSend;					// Abstract data send function
 
-	uint8_t OLEDErrorSolvingTrials;		//Amount of tries to reach OLED
+	uint8_t OLEDErrorSolvingTrials;		// Amount of tries to reach OLED
 
-	uint8_t * FrameMem;					//Pointer to heap area for frame buffer
+	uint8_t * FrameMem;					// Pointer to heap area for frame buffer
+
+	uint8_t Width;						// Definition of display in 8 bit segments
+
+	uint8_t Heigth;						// Definition of display in pages
+
+	uint16_t FrameSize;					// Pages X Segments - in bytes
+
+	OLED_CursorCoordTypeDef * Cursor;	// Active segment and page in GDDR for new data
 
 }OLED_HandleTypeDef;
 
@@ -206,22 +228,24 @@ extern OLED_HandleTypeDef OLED096;
 
 /* Private function prototypes -----------------------------------------------*/
 /* OLED FUNCTIONS BEGIN PROTOTYPES */
-void i2c_init(void);
-OLED_StatusTypeDef OLED_Init(OLED_HandleTypeDef* oled);
-void sendCommand(unsigned char command);
-void LCD_Clear(void);
-void Set_Contrast(uint8_t value);
+
+
+OLED_StatusTypeDef OLED_Init(OLED_HandleTypeDef *OLED);
+OLED_StatusTypeDef OLED_DeInit(OLED_HandleTypeDef *OLED);
+OLED_StatusTypeDef OLED_FrameRefresh (OLED_HandleTypeDef *OLED);
+OLED_StatusTypeDef OLED_DrawTestImage(OLED_HandleTypeDef *OLED);
+
+
+void OLED_Set_Contrast(OLED_HandleTypeDef* OLED, uint8_t *value);
 
 void LCD_Char(uint8_t c);
 
-void LCD_Goto(uint8_t x, uint8_t y);
+void OLED_Set_Cursor(OLED_HandleTypeDef* OLED, uint8_t Byte, uint8_t Page);
 
-void LCD_DrawImage(unsigned char num_image);
 void OLED_string(char *string);
 void OLED_num_to_str(unsigned int value, unsigned char nDigit);
 /* OLED FUNCTIONS END PROTOTYPES */
 
 /* OLED Function refactored */
 
-OLED_StatusTypeDef OLED_SendData (OLED_DataType Descriptor, const uint8_t  Data);
 

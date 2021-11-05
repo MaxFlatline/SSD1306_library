@@ -93,24 +93,24 @@ int main(void)
 
 
   OLED_Init(&OLED096);
-
-  LCD_Clear();
-  LCD_Goto(0,0);
-  OLED_string("FUCK Drive 2!");
-  LCD_Goto(0,1);
-  OLED_string("FUCK Drive 2!");
-  LCD_Goto(0,2);
-  OLED_string("FUCK Drive 2!");
-  LCD_Goto(0,3);
-  OLED_string("FUCK Drive 2!");
-  LCD_Goto(0,4);
-  OLED_string("FUCK Drive 2!");
-  LCD_Goto(0,5);
-  OLED_string("FUCK Drive 2!");
-  LCD_Goto(0,6);
-  OLED_string("FUCK Drive 2!");
-  LCD_Goto(0,7);
-  OLED_string("FUCK Drive 2!");
+  OLED_DrawTestImage(&OLED096);
+  OLED_FrameRefresh (&OLED096);
+//  OLED_Set_Cursor(&OLED096, 0, 0);
+//  OLED_string("FUCK Drive 2!");
+//  OLED_Set_Cursor(&OLED096, 0, 1);
+//  OLED_string("FUCK Drive 2!");
+//  OLED_Set_Cursor(&OLED096, 0,2);
+//  OLED_string("FUCK Drive 2!");
+//  OLED_Set_Cursor(&OLED096, 0, 3);
+//  OLED_string("FUCK Drive 2!");
+//  OLED_Set_Cursor(&OLED096, 0, 4);
+//  OLED_string("FUCK Drive 2!");
+//  OLED_Set_Cursor(&OLED096, 0, 5);
+//  OLED_string("FUCK Drive 2!");
+//  OLED_Set_Cursor(&OLED096, 0, 6);
+//  OLED_string("FUCK Drive 2!");
+//  OLED_Set_Cursor(&OLED096, 0, 7);
+//  OLED_string("FUCK Drive 2!");
 
   /* USER CODE END 2 */
 
