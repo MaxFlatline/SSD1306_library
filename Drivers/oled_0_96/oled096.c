@@ -12,25 +12,27 @@
 
 /* Global variables */
 
-
 OLED_HandleTypeDef OLED096;
-
 
 /* Global variables END*/
 
-uint8_t temp_char[7] = {0,0,0,0,0,0,0}; 											// ?
-
-unsigned char LCD_X,LCD_Y;  														//Cursor coordinates
-
-
-
 
 //======Private function prototypes==========================================
-static OLED_ErrorHandlerType OLED_ErrorHandler (OLED_HandleTypeDef * OLED);
+
 static OLED_StatusTypeDef OLED_FrameMem_Init (OLED_HandleTypeDef * OLED);
 static OLED_StatusTypeDef OLED_FrameMem_DeInit (OLED_HandleTypeDef * OLED);
-static OLED_StatusTypeDef OLED_SendData (OLED_DataType Descriptor, uint8_t AddressI2C, uint8_t *Data, size_t length);
 static OLED_StatusTypeDef OLED_GDDR_Clear (OLED_HandleTypeDef* OLED);
+
+typedef enum{
+	SSD1206_DISPLAY_ON 	= 0xAF,
+	SSD1206_DISPLAY_OFF = 0xAE,
+} ssd1206_display_on_off_t;
+static OLED_StatusTypeDef OLED_SetDisplayOnOff(OLED_HandleTypeDef *OLED, ssd1206_display_on_off_t value);
+
+static OLED_StatusTypeDef OLED_SetContrast(OLED_HandleTypeDef *OLED, uint8_t value);
+
+static OLED_ErrorHandlerType OLED_ErrorHandler (OLED_HandleTypeDef * OLED);
+static OLED_StatusTypeDef OLED_SendData (OLED_DataType Descriptor, uint8_t AddressI2C, uint8_t *Data, size_t length);
 //===========================================================================
 
 /**
@@ -56,7 +58,7 @@ OLED_StatusTypeDef OLED_Init(OLED_HandleTypeDef* OLED)
 	OLED->Cursor = NULL;
 
 	// Turn display off
-	Result = OLED_SetDisplayOff(OLED);
+	Result = OLED_SetDisplayOnOff(OLED, 174);
 
 	tempBuf = OLED_SETDISPLAYCLOCKDIV;
 	Result = OLED->DataSend(COMMAND, OLED->AddressI2C, &tempBuf, 1);
@@ -91,10 +93,9 @@ OLED_StatusTypeDef OLED_Init(OLED_HandleTypeDef* OLED)
 	tempBuf = OLED_SETCOMPINS_COM_CONF_ALT | OLED_SETCOMPINS_COM_REMAP_NONE;
 	Result = OLED->DataSend(COMMAND, OLED->AddressI2C, &tempBuf, 1);
 
-	tempBuf = OLED_SETCONTRAST;
-	Result = OLED->DataSend(COMMAND, OLED->AddressI2C, &tempBuf, 1);
-	tempBuf = OLED_SETCONTRAST_MAX;
-	Result = OLED->DataSend(COMMAND, OLED->AddressI2C, &tempBuf, 1);
+
+	Result = OLED_SetContrast(OLED, OLED_SETCONTRAST_MAX);
+
 
 	tempBuf = OLED_SETPRECHARGE;
 	Result = OLED->DataSend(COMMAND, OLED->AddressI2C, &tempBuf, 1);
@@ -123,7 +124,7 @@ OLED_StatusTypeDef OLED_Init(OLED_HandleTypeDef* OLED)
 	Result = OLED->DataSend(COMMAND, OLED->AddressI2C, &tempBuf, 1);
 
 	// Turn display back on
-	Result = OLED_SetDisplayOn(OLED);
+	Result = OLED_SetDisplayOnOff(OLED, 175);
 
 	// Memory allocation for frame buffer
 	Result = OLED_FrameMem_Init (OLED);
@@ -150,38 +151,14 @@ OLED_StatusTypeDef OLED_Init(OLED_HandleTypeDef* OLED)
  */
 OLED_StatusTypeDef OLED_DeInit(OLED_HandleTypeDef* OLED){
 	OLED_StatusTypeDef Result = OLED_OK;
-	uint8_t tempBuf = OLED_DISPLAYOFF;
-
-	OLED->DataSend(COMMAND, OLED->AddressI2C, &tempBuf, 1);
+	Result = OLED_SetDisplayOnOff(OLED, SSD1206_DISPLAY_OFF);
 	Result = OLED_FrameMem_DeInit (OLED);
 	HAL_I2C_DeInit(&hi2c1);
 	MX_I2C1_Init();
 	return Result;
 }
 
-/**
- * @brief Function sends data to OLED unit
- *
- * @returns  Status of operation
- * 			 default : Same as HAL_I2C_Transmit
- *			 4 		: Incorrect descriptor
- *
- * @[IN]data (enum Data/Command) Descriptor
- * 			 uint8_t 			 Data to send
- */
-static OLED_StatusTypeDef OLED_SendData (OLED_DataType Descriptor, uint8_t AddressI2C, uint8_t *Data, size_t length){
 
-	OLED_StatusTypeDef Result = OLED_OK;
-
-	if(Descriptor == DATA || Descriptor == COMMAND){
-		Result = HAL_I2C_Mem_Write(&hi2c1, (uint16_t)AddressI2C, (uint16_t)Descriptor, I2C_MEMADD_SIZE_8BIT, Data, length,100);
-	}
-	else{
-		Result = OLED_DESCFAIL;
-	}
-
-	return Result;
-}
 
 /**
  * @brief Function refreshes OLED screen with current frame stored in &OLED
@@ -236,40 +213,23 @@ OLED_StatusTypeDef OLED_DrawTestImage(OLED_HandleTypeDef *OLED){
 }
 
 /**
- * @brief Function sets display on
+ * @brief Function sets display on/off
  *
- * @returns  Status of operation
- * 			 default 			: Same as HAL_I2C_Mem_Write
- *
- * @[IN]data &OLED - Display object
- *
- */
-OLED_StatusTypeDef OLED_SetDisplayOn(OLED_HandleTypeDef * OLED){
-	OLED_StatusTypeDef Result = OLED_OK;
-	uint8_t command = 0;
-
-	command = OLED_DISPLAYON;
-	Result = OLED->DataSend(COMMAND, OLED->AddressI2C, &command, 1);
-	return Result;
-}
-
-/**
- * @brief Function sets display off
- *
- * @returns  Status of operation
- * 			 default 			: Same as HAL_I2C_Mem_Write
+ * @returns necessary 0 for correct execution
  *
  * @[IN]data &OLED - Display object
- *
+ * @[IN]data value - ssd1206_display_on_off_t CMD
  */
-OLED_StatusTypeDef OLED_SetDisplayOff(OLED_HandleTypeDef * OLED){
+OLED_StatusTypeDef OLED_SetDisplayOnOff(OLED_HandleTypeDef *OLED, ssd1206_display_on_off_t value){
 	OLED_StatusTypeDef Result = OLED_OK;
-	uint8_t tempBuf = OLED_DISPLAYON;
-
-	Result = OLED->DataSend(COMMAND, OLED->AddressI2C, &tempBuf, 1);
-
+	Result = OLED->DataSend(COMMAND, OLED->AddressI2C, (uint8_t *) &value, 1);
 	return Result;
 }
+/*
+ *
+ * End function NAME_FUNCTION
+ *
+ */
 
 /**
  * @brief Function sets OLED contrast to desired value
@@ -279,13 +239,13 @@ OLED_StatusTypeDef OLED_SetDisplayOff(OLED_HandleTypeDef * OLED){
  * @[IN]data uint8_t	 Desired contrast value (0-255)
  *
  */
-OLED_StatusTypeDef OLED_SetContrast(OLED_HandleTypeDef* OLED, uint8_t *value)
+OLED_StatusTypeDef OLED_SetContrast(OLED_HandleTypeDef* OLED, uint8_t value)
 {
 	OLED_StatusTypeDef Result = OLED_OK;
 	uint8_t tempBuf = OLED_SETCONTRAST;
 
 	Result = OLED->DataSend(COMMAND, OLED->AddressI2C, &tempBuf, 1);
-	Result = OLED->DataSend(DATA, OLED->AddressI2C, value, 1);
+	Result = OLED->DataSend(DATA, OLED->AddressI2C, &value, 1);
 
 	return Result;
 }
@@ -383,90 +343,38 @@ static OLED_StatusTypeDef OLED_FrameMem_DeInit (OLED_HandleTypeDef * OLED){
 	free(OLED->FrameMem);
 	return OLED_OK;
 }
-
-
-/**
- * @brief Function returns offset for matching ASCII
- * input with LCD_Buffer
- *
- * @returns  Offset
- *
- * @[IN]data uint8_t	 Default ASCII character
- *
- */
-uint8_t Char_to_buffer_offset(uint8_t chr)
-{
-	if(chr >= 32 && chr <= 127)
-		return 32;
-	if(chr >= 192 && chr <= 255)
-		return 95;
-	return 0;
-}
-
-//Функция выводит 6 байт в GDDRAM OLED 7 байт - межсимвольный интервал,
-//Переписать функцию чтобы она работала с кадром а не с дисплеем напрямую
-
-void LCD_Char(uint8_t c)
-{
-	uint8_t x = 0;
-	temp_char[0] = DATA; 	// DATA descriptor
-	uint8_t offset = Char_to_buffer_offset(c);
-
-	if(!offset) return; //If desired char is not presented in Font_6x6_RuEng exit the function
-
-	for (x=0; x<5; x++)
-	{
-		temp_char[x+1] = Font_6x6_RuEng[c*5-5*offset+x];
-	}
-	temp_char[6] = 0;
-	HAL_I2C_Master_Transmit(&hi2c1, OLED_ADRESS, temp_char, 7,1000);
-
-	LCD_X += 6;
-	if(LCD_X>=OLED_WIDTH-2)
-	{
-		if(LCD_Y > 6){
-			LCD_Y = 0;
-		}
-		else{
-			LCD_Y++;
-		}
-		LCD_X = OLED_DEFAULT_SPACE;
-		//LCD_Goto(LCD_X,LCD_Y);
-	}
-}
-
-
-void OLED_string(char *string)
-{
-	while(*string != '\0')
-	{
-		LCD_Char(*string);
-		string++;
-	}
-}
-
-/**
- * @returns Nothing
- *
- * @data value binary
- * @data symbols
- *
- *
- */
-void OLED_num_to_str(unsigned int value, unsigned char nDigit)
-{
-	switch(nDigit)
-	{
-		case 5: LCD_Char(value/10000+48);
-		case 4: LCD_Char((value/1000)%10+48);
-		case 3: LCD_Char((value/100)%10+48);
-		case 2: LCD_Char((value/10)%10+48);
-		case 1: LCD_Char(value%10+48);
-	}
-}
 /*
  *
  * End function NAME_FUNCTION
  *
  */
 
+
+/**
+ * @brief Function sends data to OLED unit
+ *
+ * @returns  Status of operation
+ * 			 default : Same as HAL_I2C_Transmit
+ *			 4 		: Incorrect descriptor
+ *
+ * @[IN]data (enum Data/Command) Descriptor
+ * 			 uint8_t 			 Data to send
+ */
+static OLED_StatusTypeDef OLED_SendData (OLED_DataType Descriptor, uint8_t AddressI2C, uint8_t *Data, size_t length){
+
+	OLED_StatusTypeDef Result = OLED_OK;
+
+	if(Descriptor == DATA || Descriptor == COMMAND){
+		Result = HAL_I2C_Mem_Write(&hi2c1, (uint16_t)AddressI2C, (uint16_t)Descriptor, I2C_MEMADD_SIZE_8BIT, Data, length,100);
+	}
+	else{
+		Result = OLED_DESCFAIL;
+	}
+
+	return Result;
+}
+/*
+ *
+ * End function NAME_FUNCTION
+ *
+ */
