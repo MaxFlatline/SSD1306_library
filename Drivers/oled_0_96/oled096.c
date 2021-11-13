@@ -245,7 +245,7 @@ OLED_StatusTypeDef OLED_SetContrast(OLED_HandleTypeDef* OLED, uint8_t value)
 	uint8_t tempBuf = OLED_SETCONTRAST;
 
 	Result = OLED->DataSend(COMMAND, OLED->AddressI2C, &tempBuf, 1);
-	Result = OLED->DataSend(DATA, OLED->AddressI2C, &value, 1);
+	Result = OLED->DataSend(COMMAND, OLED->AddressI2C, &value, 1);
 
 	return Result;
 }
