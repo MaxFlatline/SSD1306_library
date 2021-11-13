@@ -164,3 +164,10 @@ OLED_test.ioc
 .mxproject
 .mxproject
 OLED_test.ioc
+Debug/Drivers/oled_0_96/Font.d
+*.o
+*.su
+*.d
+Drivers/CMSIS/Device/ST/STM32L0xx/Include/stm32l011xx.h
+Drivers/CMSIS/Device/ST/STM32L0xx/Include/stm32l0xx.h
+Drivers/CMSIS/Device/ST/STM32L0xx/Include/system_stm32l0xx.h
