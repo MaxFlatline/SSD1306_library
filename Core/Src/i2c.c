@@ -58,8 +58,6 @@ void MX_I2C1_Init(void)
 
 }
 
-
-
 void HAL_I2C_MspInit(I2C_HandleTypeDef* i2cHandle)
 {
 

@@ -36,14 +36,14 @@
 /* OLED COMMANDS BEGIN DEFINES */
 /* OLED commands ---------------------------------------------------------*/
 #define OLED_ADRESS 0x78
-#define OLED_MAX_TRIALS 3
+#define OLED_MAX_TRIALS 1
 
 
 
 /* USER CODE BEGIN PV */
 /* Imported variables ---------------------------------------------------------*/
-extern uint8_t temp_char[7];
-extern unsigned char LCD_X,LCD_Y;  //Cursor coordinates
+
+
 /* private variables ---------------------------------------------------------*/
 
 /* USER CODE END PV */
@@ -162,12 +162,8 @@ OLED_StatusTypeDef OLED_DeInit(OLED_HandleTypeDef *OLED);
 OLED_StatusTypeDef OLED_FrameRefresh (OLED_HandleTypeDef *OLED);
 OLED_StatusTypeDef OLED_DrawTestImage(OLED_HandleTypeDef *OLED);
 
-OLED_StatusTypeDef OLED_SetDisplayOn(OLED_HandleTypeDef *OLED);
-OLED_StatusTypeDef OLED_SetDisplayOff(OLED_HandleTypeDef *OLED);
-OLED_StatusTypeDef OLED_SetContrast(OLED_HandleTypeDef *OLED, uint8_t *value);
 
 
-void OLED_Set_Contrast(OLED_HandleTypeDef* OLED, uint8_t *value);
 
 void LCD_Char(uint8_t c);
 
