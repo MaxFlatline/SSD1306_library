@@ -16,9 +16,9 @@
 #define OLED_DISPLAYALLON 0xA5
 
 //TODO: Изменить на COLORS (используем американское произношение вместо британского?)
-#define OLED_COLOURS_INV		0xA6
-#define OLED_COLOURS_INV_TRUE	0x01
-#define OLED_COLOURS_INV_FALSE	0x00
+#define OLED_COLORS_INV		0xA6
+#define OLED_COLORS_INV_TRUE	0x01
+#define OLED_COLORS_INV_FALSE	0x00
 
 #define OLED_DISPLAYOFF 0xAE
 #define OLED_DISPLAYON 0xAF

@@ -112,8 +112,8 @@ OLED_StatusTypeDef OLED_Init(OLED_HandleTypeDef* OLED)
 	Result = OLED->DataSend(COMMAND, OLED->AddressI2C, &tempBuf, 1);
 
 
-	// Non-inverted colours of display
-	tempBuf = OLED_COLOURS_INV | OLED_COLOURS_INV_FALSE;
+	// Non-inverted COLORS of display
+	tempBuf = OLED_COLORS_INV | OLED_COLORS_INV_FALSE;
 	Result = OLED->DataSend(COMMAND, OLED->AddressI2C, &tempBuf, 1);
 
 	// We use internal charge pump
