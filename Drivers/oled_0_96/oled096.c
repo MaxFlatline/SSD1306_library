@@ -56,8 +56,8 @@ OLED_StatusTypeDef OLED_Init(OLED_HandleTypeDef* OLED)
 	OLED->Cursor = NULL;
 
 	// Turn display off
-	tempBuf = OLED_DISPLAYOFF;
-	Result = OLED->DataSend(COMMAND, OLED->AddressI2C, &tempBuf, 1);
+	Result = OLED_SetDisplayOff(OLED);
+
 	tempBuf = OLED_SETDISPLAYCLOCKDIV;
 	Result = OLED->DataSend(COMMAND, OLED->AddressI2C, &tempBuf, 1);
 	tempBuf = OLED_DISPLAYCLOCKFREQ_MAX;
@@ -123,8 +123,7 @@ OLED_StatusTypeDef OLED_Init(OLED_HandleTypeDef* OLED)
 	Result = OLED->DataSend(COMMAND, OLED->AddressI2C, &tempBuf, 1);
 
 	// Turn display back on
-	tempBuf = OLED_DISPLAYON;
-	Result = OLED->DataSend(COMMAND, OLED->AddressI2C, &tempBuf, 1);
+	Result = OLED_SetDisplayOn(OLED);
 
 	// Memory allocation for frame buffer
 	Result = OLED_FrameMem_Init (OLED);
@@ -234,6 +233,61 @@ OLED_StatusTypeDef OLED_DrawTestImage(OLED_HandleTypeDef *OLED){
 
 	}
 	return OLED_OK;
+}
+
+/**
+ * @brief Function sets display on
+ *
+ * @returns  Status of operation
+ * 			 default 			: Same as HAL_I2C_Mem_Write
+ *
+ * @[IN]data &OLED - Display object
+ *
+ */
+OLED_StatusTypeDef OLED_SetDisplayOn(OLED_HandleTypeDef * OLED){
+	OLED_StatusTypeDef Result = OLED_OK;
+	uint8_t command = 0;
+
+	command = OLED_DISPLAYON;
+	Result = OLED->DataSend(COMMAND, OLED->AddressI2C, &command, 1);
+	return Result;
+}
+
+/**
+ * @brief Function sets display off
+ *
+ * @returns  Status of operation
+ * 			 default 			: Same as HAL_I2C_Mem_Write
+ *
+ * @[IN]data &OLED - Display object
+ *
+ */
+OLED_StatusTypeDef OLED_SetDisplayOff(OLED_HandleTypeDef * OLED){
+	OLED_StatusTypeDef Result = OLED_OK;
+	uint8_t tempBuf = OLED_DISPLAYON;
+
+	Result = OLED->DataSend(COMMAND, OLED->AddressI2C, &tempBuf, 1);
+
+	return Result;
+}
+
+/**
+ * @brief Function sets OLED contrast to desired value
+ *
+ * @returns  Nothing
+ *
+ * @[IN]data uint8_t	 Desired contrast value (0-255)
+ *
+ */
+OLED_StatusTypeDef OLED_SetContrast(OLED_HandleTypeDef* OLED, uint8_t *value)
+{
+	OLED_StatusTypeDef Result = OLED_OK;
+	uint8_t tempBuf = OLED_SETCONTRAST;
+
+	Result = OLED->DataSend(COMMAND, OLED->AddressI2C, &tempBuf, 1);
+	Result = OLED->DataSend(DATA, OLED->AddressI2C, value, 1);
+
+	return Result;
 }
 
 
@@ -416,19 +470,3 @@ void OLED_num_to_str(unsigned int value, unsigned char nDigit)
  *
  */
 
-
-/**
- * @brief Function sets OLED contrast to desired value
- *
- * @returns  Nothing
- *
- * @[IN]data uint8_t	 Desired contrast value (0-255)
- *
- */
-void OLED_Set_Contrast(OLED_HandleTypeDef* OLED, uint8_t *value)
-{
-	uint8_t tempBuf = OLED_SETCONTRAST;
-	OLED_SendData (COMMAND, OLED->AddressI2C, &tempBuf, 1);
-	OLED_SendData (DATA, OLED->AddressI2C, value, 1);
-
-}

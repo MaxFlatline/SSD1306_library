@@ -162,6 +162,10 @@ OLED_StatusTypeDef OLED_DeInit(OLED_HandleTypeDef *OLED);
 OLED_StatusTypeDef OLED_FrameRefresh (OLED_HandleTypeDef *OLED);
 OLED_StatusTypeDef OLED_DrawTestImage(OLED_HandleTypeDef *OLED);
 
+OLED_StatusTypeDef OLED_SetDisplayOn(OLED_HandleTypeDef *OLED);
+OLED_StatusTypeDef OLED_SetDisplayOff(OLED_HandleTypeDef *OLED);
+OLED_StatusTypeDef OLED_SetContrast(OLED_HandleTypeDef *OLED, uint8_t *value);
+
 
 void OLED_Set_Contrast(OLED_HandleTypeDef* OLED, uint8_t *value);
 
