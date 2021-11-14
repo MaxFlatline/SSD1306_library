@@ -212,6 +212,7 @@ OLED_StatusTypeDef OLED_DrawTestImage(OLED_HandleTypeDef *OLED){
 	}
 
 	uint8_t t = 0;
+	uint8_t squares_count = 0;
 	uint8_t tempBuf = 0;
 	for (size_t i = 0; i < OLED->FrameSize; i++)
 	{
@@ -220,7 +221,14 @@ OLED_StatusTypeDef OLED_DrawTestImage(OLED_HandleTypeDef *OLED){
 		{
 			tempBuf = ~tempBuf;
 			t = 0;
+			squares_count++;
 		}
+		if(squares_count == 16)
+		{
+			squares_count = 0;
+			tempBuf = ~tempBuf;
+		}
+
 		*(OLED->FrameMem + i) = tempBuf;
 		t++;
 
