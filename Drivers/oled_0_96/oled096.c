@@ -118,7 +118,6 @@ static OLED_StatusTypeDef OLED_SendData (OLED_DataType Descriptor, uint8_t Addre
 OLED_StatusTypeDef OLED_Init(OLED_HandleTypeDef* OLED)
 {
 	OLED_StatusTypeDef Result = OLED_OK;
-	uint8_t tempBuf = 0;
 
 	OLED->DataSend = OLED_SendData;
 	OLED->AddressI2C = OLED_ADRESS;
