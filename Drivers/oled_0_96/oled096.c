@@ -70,7 +70,7 @@ static OLED_StatusTypeDef OLED_Set_SegRemap(OLED_HandleTypeDef* OLED, ssd1306_se
 
 typedef enum{
 	SSD1306_MEMORYMODE_PGE = OLED_MEMORYMODE|OLED_MEMORYMODE_PGE,
-	SSD1306_SEGREMAP_127_HORISONTAL = OLED_MEMORYMODE|OLED_MEMORYMODE_HOR,
+	SSD1306_MEMORYMODE_HORISONTAL = OLED_MEMORYMODE|OLED_MEMORYMODE_HOR,
 	SSD1306_MEMORYMODE_VERTICAL = OLED_MEMORYMODE|OLED_MEMORYMODE_VER
 } ssd1306_memorymode_state_t;
 static OLED_StatusTypeDef OLED_Set_MemoryMode(OLED_HandleTypeDef* OLED, ssd1306_memorymode_state_t value);
@@ -117,83 +117,29 @@ static OLED_StatusTypeDef OLED_SendData (OLED_DataType Descriptor, uint8_t Addre
 OLED_StatusTypeDef OLED_Init(OLED_HandleTypeDef* OLED)
 {
 	OLED_StatusTypeDef Result = OLED_OK;
-
 	uint8_t tempBuf = 0;
+
 	OLED->DataSend = OLED_SendData;
 	OLED->AddressI2C = OLED_ADRESS;
 	OLED->Heigth = OLED_096_PAGES;
 	OLED->Width = OLED_096_SEGS;
-
 	OLED->Cursor = NULL;
 
-	// Turn display off
 	Result = OLED_SetDisplayOnOff(OLED, SSD1306_DISPLAY_OFF);
-
-	tempBuf = OLED_SETDISPLAYCLOCKDIV;
-	Result = OLED->DataSend(COMMAND, OLED->AddressI2C, &tempBuf, 1);
-	tempBuf = OLED_DISPLAYCLOCKFREQ_MAX;
-	Result = OLED->DataSend(COMMAND, OLED->AddressI2C, &tempBuf, 1);
-
-	tempBuf = OLED_SETMULTIPLEX;
-	Result = OLED->DataSend(COMMAND, OLED->AddressI2C, &tempBuf, 1);
-	tempBuf = OLED_HEIGHT-1;
-	Result = OLED->DataSend(COMMAND, OLED->AddressI2C, &tempBuf, 1);
-
-	tempBuf = OLED_SETDISPLAYOFFSET;
-	Result = OLED->DataSend(COMMAND, OLED->AddressI2C, &tempBuf, 1);
-	tempBuf = OLED_SETLOWCOLUMN;
-	Result = OLED->DataSend(COMMAND, OLED->AddressI2C, &tempBuf, 1);
-
-
-	tempBuf = OLED_SETSTARTLINE | OLED_STARTLINE_DEFAULT;
-	Result = OLED->DataSend(COMMAND, OLED->AddressI2C, &tempBuf, 1);
-
-	// Horizontal memory mode
-	tempBuf = OLED_MEMORYMODE;
-	Result = OLED->DataSend(COMMAND, OLED->AddressI2C, &tempBuf, 1);
-	tempBuf = OLED_MEMORYMODE_HOR;
-	Result = OLED->DataSend(COMMAND, OLED->AddressI2C, &tempBuf, 1);
-
-	tempBuf = OLED_SEGREMAP | OLED_SEGREMAP_127_SEG0;
-	Result = OLED->DataSend(COMMAND, OLED->AddressI2C, &tempBuf, 1);
-
-	tempBuf = OLED_COMSCANDEC;
-	Result = OLED->DataSend(COMMAND, OLED->AddressI2C, &tempBuf, 1);
-
-	tempBuf = OLED_SETCOMPINS;
-	Result = OLED->DataSend(COMMAND, OLED->AddressI2C, &tempBuf, 1);
-	tempBuf = OLED_SETCOMPINS_COM_CONF_ALT | OLED_SETCOMPINS_COM_REMAP_NONE;
-	Result = OLED->DataSend(COMMAND, OLED->AddressI2C, &tempBuf, 1);
-
+	Result = OLED_Set_Display_ClockDiv(OLED, SSD1306_CLOCKFREQ_MAX);
+	Result = OLED_Set_MultiplexRatio(OLED, SSD1306_MULTIPLEXRATIO_DEFAULT);
+	Result = OLED_Set_DisplayOffset(OLED, SSD1306_DISPLAYOFFSET_LOWCOLUMN);
+	Result = OLED_Set_StartLine(OLED, SSD1306_STARTLINE_DEFAULT);
+	Result = OLED_Set_MemoryMode(OLED, SSD1306_MEMORYMODE_HORISONTAL);
+	Result = OLED_Set_SegRemap(OLED, SSD1306_SEGREMAP_127_SEG0);
+	Result = OLED_Set_ComScanDir(OLED, SSD1306_COMSCANDEC);
+	Result = OLED_Set_ComPins(OLED, SSD1306_COMPINS_DEFAULT);
 	Result = OLED_SetContrast(OLED, OLED_SETCONTRAST_MAX);
-
-	tempBuf = OLED_SETPRECHARGE;
-	Result = OLED->DataSend(COMMAND, OLED->AddressI2C, &tempBuf, 1);
-	tempBuf = OLED_SETPRECHARGE_PHASE_1 | OLED_SETPRECHARGE_PHASE_2;
-	Result = OLED->DataSend(COMMAND, OLED->AddressI2C, &tempBuf, 1);
-
-	tempBuf = OLED_SETVCOMDETECT;
-	Result = OLED->DataSend(COMMAND, OLED->AddressI2C, &tempBuf, 1);
-	tempBuf = OLED_SETVCOMDETECT_MID;
-	Result = OLED->DataSend(COMMAND, OLED->AddressI2C, &tempBuf, 1);
-
-	tempBuf = OLED_DISPLAYALLON;
-	Result = OLED->DataSend(COMMAND, OLED->AddressI2C, &tempBuf, 1);
-	tempBuf = OLED_DISPLAYALLON_RESUME;
-	Result = OLED->DataSend(COMMAND, OLED->AddressI2C, &tempBuf, 1);
-
-
-	// Non-inverted COLORS of display
-	tempBuf = OLED_COLORS_INV | OLED_COLORS_INV_FALSE;
-	Result = OLED->DataSend(COMMAND, OLED->AddressI2C, &tempBuf, 1);
-
-	// We use internal charge pump
-	tempBuf = OLED_CHARGEPUMP;
-	Result = OLED->DataSend(COMMAND, OLED->AddressI2C, &tempBuf, 1);
-	tempBuf = OLED_CHARGEPUMP_ON;
-	Result = OLED->DataSend(COMMAND, OLED->AddressI2C, &tempBuf, 1);
-
-	// Turn display back on
+	Result = OLED_Set_PreCharge(OLED);
+	Result = OLED_Set_VComDetect(OLED, SSD1306_SETVCOMDETECT_MID);
+	Result = OLED_Set_Display_Use_GDDRAM(OLED);
+	Result = OLED_Set_Display_ColorMode(OLED, SSD1306_COLORS_NON_INV);
+	Result = OLED_Set_ChargePumpOnOff(OLED, SSD1306_CHARGEPUMP_ON);
 	Result = OLED_SetDisplayOnOff(OLED, SSD1306_DISPLAY_ON);
 
 	// Memory allocation for frame buffer
@@ -488,7 +434,9 @@ OLED_StatusTypeDef OLED_Set_SegRemap(OLED_HandleTypeDef* OLED, ssd1306_segremap_
 OLED_StatusTypeDef OLED_Set_MemoryMode(OLED_HandleTypeDef* OLED, ssd1306_memorymode_state_t value)
 {
 	OLED_StatusTypeDef Result = OLED_OK;
+	uint8_t tempBuf = OLED_MEMORYMODE;
 
+	Result = OLED->DataSend(COMMAND, OLED->AddressI2C, &tempBuf, 1);
 	Result = OLED->DataSend(COMMAND, OLED->AddressI2C, (uint8_t *) &value, 1);
 
 	return Result;
