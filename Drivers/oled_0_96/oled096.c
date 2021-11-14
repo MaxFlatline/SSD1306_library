@@ -99,6 +99,7 @@ static OLED_StatusTypeDef OLED_Set_MultiplexRatio(OLED_HandleTypeDef* OLED, ssd1
 static OLED_StatusTypeDef OLED_Set_PreCharge(OLED_HandleTypeDef* OLED);
 static OLED_StatusTypeDef OLED_Set_Display_Use_GDDRAM(OLED_HandleTypeDef* OLED);
 static OLED_StatusTypeDef OLED_SetContrast(OLED_HandleTypeDef *OLED, uint8_t value);
+static OLED_StatusTypeDef OLED_Set_Cursor(OLED_HandleTypeDef* OLED, uint8_t Byte, uint8_t Page);
 
 static OLED_ErrorHandlerType OLED_ErrorHandler (OLED_HandleTypeDef * OLED);
 static OLED_StatusTypeDef OLED_SendData (OLED_DataType Descriptor, uint8_t AddressI2C, uint8_t *Data, size_t length);
@@ -126,6 +127,7 @@ OLED_StatusTypeDef OLED_Init(OLED_HandleTypeDef* OLED)
 	OLED->Cursor = NULL;
 
 	Result = OLED_SetDisplayOnOff(OLED, SSD1306_DISPLAY_OFF);
+	Result = OLED_Set_ChargePumpOnOff(OLED, SSD1306_CHARGEPUMP_OFF);
 	Result = OLED_Set_Display_ClockDiv(OLED, SSD1306_CLOCKFREQ_MAX);
 	Result = OLED_Set_MultiplexRatio(OLED, SSD1306_MULTIPLEXRATIO_DEFAULT);
 	Result = OLED_Set_DisplayOffset(OLED, SSD1306_DISPLAYOFFSET_LOWCOLUMN);
@@ -147,10 +149,12 @@ OLED_StatusTypeDef OLED_Init(OLED_HandleTypeDef* OLED)
 
 	OLED->FrameSize = OLED_096_PAGES * OLED_096_SEGS;
 
-	Result = OLED_GDDR_Clear (OLED);
+	Result = OLED_GDDR_Clear(OLED);
 	if(Result != OLED_OK){
-		  OLED_ErrorHandler (OLED);
+		  OLED_ErrorHandler(OLED);
 	}
+
+	Result = OLED_Set_Cursor(OLED,0,0);
 
 	return Result;
 }
@@ -537,14 +541,18 @@ OLED_StatusTypeDef OLED_Set_ComPins(OLED_HandleTypeDef* OLED, ssd1306_compins_st
  * @returns bool status of error handling
  *
  */
-void OLED_Set_Cursor(OLED_HandleTypeDef* OLED, uint8_t Byte, uint8_t Page)
+OLED_StatusTypeDef OLED_Set_Cursor(OLED_HandleTypeDef* OLED, uint8_t Byte, uint8_t Page)
 {
+	OLED_StatusTypeDef Result = OLED_OK;
 	uint8_t tempBuf = OLED_SET_ADDR_PAGE_MODE + Page;
+
 	OLED->DataSend(COMMAND, OLED->AddressI2C, &tempBuf, 1);
 	tempBuf = Byte & OLED_SET_CLMN_PAGE_MODE_L;
 	OLED->DataSend(COMMAND, OLED->AddressI2C, &tempBuf, 1);
 	tempBuf = OLED_SET_CLMN_PAGE_MODE_H | (Byte >> 4);
 	OLED->DataSend(COMMAND, OLED->AddressI2C, &tempBuf, 1);
+
+	return Result;
 }
 
 
