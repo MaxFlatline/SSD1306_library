@@ -24,10 +24,10 @@ static OLED_StatusTypeDef OLED_FrameMem_DeInit (OLED_HandleTypeDef * OLED);
 static OLED_StatusTypeDef OLED_GDDR_Clear (OLED_HandleTypeDef* OLED);
 
 typedef enum{
-	SSD1206_DISPLAY_ON 	= 0xAF,
-	SSD1206_DISPLAY_OFF = 0xAE,
-} ssd1206_display_on_off_t;
-static OLED_StatusTypeDef OLED_SetDisplayOnOff(OLED_HandleTypeDef *OLED, ssd1206_display_on_off_t value);
+	SSD1306_DISPLAY_ON 	= 0xAF,
+	SSD1306_DISPLAY_OFF = 0xAE,
+} ssd1306_display_on_off_t;
+static OLED_StatusTypeDef OLED_SetDisplayOnOff(OLED_HandleTypeDef *OLED, ssd1306_display_on_off_t value);
 
 static OLED_StatusTypeDef OLED_SetContrast(OLED_HandleTypeDef *OLED, uint8_t value);
 
@@ -151,7 +151,7 @@ OLED_StatusTypeDef OLED_Init(OLED_HandleTypeDef* OLED)
  */
 OLED_StatusTypeDef OLED_DeInit(OLED_HandleTypeDef* OLED){
 	OLED_StatusTypeDef Result = OLED_OK;
-	Result = OLED_SetDisplayOnOff(OLED, SSD1206_DISPLAY_OFF);
+	Result = OLED_SetDisplayOnOff(OLED, SSD1306_DISPLAY_OFF);
 	Result = OLED_FrameMem_DeInit (OLED);
 	HAL_I2C_DeInit(&hi2c1);
 	MX_I2C1_Init();
@@ -220,7 +220,7 @@ OLED_StatusTypeDef OLED_DrawTestImage(OLED_HandleTypeDef *OLED){
  * @[IN]data &OLED - Display object
  * @[IN]data value - ssd1206_display_on_off_t CMD
  */
-OLED_StatusTypeDef OLED_SetDisplayOnOff(OLED_HandleTypeDef *OLED, ssd1206_display_on_off_t value){
+OLED_StatusTypeDef OLED_SetDisplayOnOff(OLED_HandleTypeDef *OLED, ssd1306_display_on_off_t value){
 	OLED_StatusTypeDef Result = OLED_OK;
 	Result = OLED->DataSend(COMMAND, OLED->AddressI2C, (uint8_t *) &value, 1);
 	return Result;
