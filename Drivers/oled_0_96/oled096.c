@@ -12,196 +12,622 @@
 
 /* Global variables */
 
-
 OLED_HandleTypeDef OLED096;
-
 
 /* Global variables END*/
 
-uint8_t LCD_Buffer[OLED_WIDTH * OLED_HEIGHT / 8];
-uint8_t temp_char[7] = {0,0,0,0,0,0,0}; 											// ?
 
-unsigned char LCD_X,LCD_Y;  														//Cursor coordinates
+//======Private function prototypes==========================================
 
-static const uint8_t Font_6x6_RuEng[0x320] =
+static OLED_StatusTypeDef OLED_FrameMem_Init (OLED_HandleTypeDef * OLED);
+static OLED_StatusTypeDef OLED_FrameMem_DeInit (OLED_HandleTypeDef * OLED);
+static OLED_StatusTypeDef OLED_GDDR_Clear (OLED_HandleTypeDef* OLED);
+
+typedef enum{
+	SSD1306_DISPLAY_ON 	= 0xAF,
+	SSD1306_DISPLAY_OFF = 0xAE
+} ssd1306_display_on_off_t;
+static OLED_StatusTypeDef OLED_SetDisplayOnOff(OLED_HandleTypeDef *OLED, ssd1306_display_on_off_t value);
+
+typedef enum{
+	SSD1306_CLOCKFREQ_MIN = 0x00,
+	SSD1306_CLOCKFREQ_300 = 0x60,
+	SSD1306_CLOCKFREQ_400 = 0xC0,
+	SSD1306_CLOCKFREQ_MAX = 0xF0
+} ssd1306_display_clock_freq_t;
+static OLED_StatusTypeDef OLED_Set_Display_ClockDiv(OLED_HandleTypeDef* OLED, ssd1306_display_clock_freq_t value);
+
+typedef enum{
+	SSD1306_COLORS_INV = OLED_COLORS_INV|OLED_COLORS_INV_TRUE,
+	SSD1306_COLORS_NON_INV = OLED_COLORS_INV|OLED_COLORS_INV_FALSE
+} ssd1306_display_color_t;
+static OLED_StatusTypeDef OLED_Set_Display_ColorMode(OLED_HandleTypeDef* OLED, ssd1306_display_color_t value);
+
+typedef enum{
+	SSD1306_CHARGEPUMP_ON = OLED_CHARGEPUMP_ON,
+	SSD1306_CHARGEPUMP_OFF = OLED_CHARGEPUMP_OFF
+} ssd1306_chargepump_state_t;
+static OLED_StatusTypeDef OLED_Set_ChargePumpOnOff(OLED_HandleTypeDef* OLED, ssd1306_chargepump_state_t value);
+
+typedef enum{
+	SSD1306_SETVCOMDETECT_TOP = OLED_SETVCOMDETECT_TOP,
+	SSD1306_SETVCOMDETECT_MID = OLED_SETVCOMDETECT_MID,
+	SSD1306_SETVCOMDETECT_LOW = OLED_SETVCOMDETECT_LOW
+} ssd1306_vcomdetect_state_t;
+static OLED_StatusTypeDef OLED_Set_VComDetect(OLED_HandleTypeDef* OLED, ssd1306_vcomdetect_state_t value);
+
+typedef enum{
+	SSD1306_COMSCANINC = OLED_COMSCANINC,
+	SSD1306_COMSCANDEC = OLED_COMSCANDEC
+} ssd1306_comscan_state_t;
+static OLED_StatusTypeDef OLED_Set_ComScanDir(OLED_HandleTypeDef* OLED, ssd1306_comscan_state_t value);
+
+typedef enum{
+	SSD1306_SEGREMAP_0_SEG0 = OLED_SEGREMAP|OLED_SEGREMAP_0_SEG0,
+	SSD1306_SEGREMAP_127_SEG0 = OLED_SEGREMAP|OLED_SEGREMAP_127_SEG0
+} ssd1306_segremap_state_t;
+static OLED_StatusTypeDef OLED_Set_SegRemap(OLED_HandleTypeDef* OLED, ssd1306_segremap_state_t value);
+
+typedef enum{
+	SSD1306_MEMORYMODE_PGE = OLED_MEMORYMODE|OLED_MEMORYMODE_PGE,
+	SSD1306_MEMORYMODE_HORISONTAL = OLED_MEMORYMODE|OLED_MEMORYMODE_HOR,
+	SSD1306_MEMORYMODE_VERTICAL = OLED_MEMORYMODE|OLED_MEMORYMODE_VER
+} ssd1306_memorymode_state_t;
+static OLED_StatusTypeDef OLED_Set_MemoryMode(OLED_HandleTypeDef* OLED, ssd1306_memorymode_state_t value);
+
+typedef enum{
+	SSD1306_STARTLINE_DEFAULT = OLED_SETSTARTLINE | OLED_STARTLINE_DEFAULT,
+} ssd1306_startline_state_t;
+static OLED_StatusTypeDef OLED_Set_StartLine(OLED_HandleTypeDef* OLED, ssd1306_startline_state_t value);
+
+typedef enum{
+	SSD1306_DISPLAYOFFSET_LOWCOLUMN = OLED_SETLOWCOLUMN,
+	SSD1306_DISPLAYOFFSET_HIGHCOLUMN = OLED_SETHIGHCOLUMN,
+} ssd1306_displayoffset_state_t;
+static OLED_StatusTypeDef OLED_Set_DisplayOffset(OLED_HandleTypeDef* OLED, ssd1306_displayoffset_state_t value);
+
+typedef enum{
+	SSD1306_COMPINS_DEFAULT = OLED_SETCOMPINS_COM_CONF_ALT | OLED_SETCOMPINS_COM_REMAP_NONE
+} ssd1306_compins_state_t;
+static OLED_StatusTypeDef OLED_Set_ComPins(OLED_HandleTypeDef* OLED, ssd1306_compins_state_t value);
+
+typedef enum{
+	SSD1306_MULTIPLEXRATIO_DEFAULT = 63
+} ssd1306_multiplex_state_t;
+static OLED_StatusTypeDef OLED_Set_MultiplexRatio(OLED_HandleTypeDef* OLED, ssd1306_multiplex_state_t value);
+
+static OLED_StatusTypeDef OLED_Set_PreCharge(OLED_HandleTypeDef* OLED);
+static OLED_StatusTypeDef OLED_Set_Display_Use_GDDRAM(OLED_HandleTypeDef* OLED);
+static OLED_StatusTypeDef OLED_SetContrast(OLED_HandleTypeDef *OLED, uint8_t value);
+static OLED_StatusTypeDef OLED_Set_Cursor(OLED_HandleTypeDef* OLED, uint8_t Byte, uint8_t Page);
+
+static OLED_ErrorHandlerType OLED_ErrorHandler (OLED_HandleTypeDef * OLED);
+static OLED_StatusTypeDef OLED_SendData (OLED_DataType Descriptor, uint8_t AddressI2C, uint8_t *Data, size_t length);
+//===========================================================================
+
+/**
+ * @brief Function initializes &OLED and clears it's screen
+ *
+ * @returns  Status of operation
+ * 			 default : Same as HAL_I2C_Mem_Write
+ *			 4 		: Transmit error
+ *
+ * @[IN]data &OLED - Display object
+ *
+ */
+OLED_StatusTypeDef OLED_Init(OLED_HandleTypeDef* OLED)
 {
-    //-- 32 English + symbols
-	0x00, 0x00, 0x00, 0x00, 0x00,// 20 space
-	0x00, 0x00, 0x5F, 0x00, 0x00,// 21 !
-	0x00, 0x07, 0x00, 0x07, 0x00,// 22 "
-	0x14, 0x7F, 0x14, 0x7F, 0x14,// 23 #
-	0x24, 0x2A, 0x7F, 0x2A, 0x12,// 24 $
-	0x23, 0x13, 0x08, 0x64, 0x62,// 25 %
-	0x36, 0x49, 0x55, 0x22, 0x50,// 26 &
-	0x00, 0x05, 0x03, 0x00, 0x00,// 27 '
-	0x00, 0x1C, 0x22, 0x41, 0x00,// 28 (
-	0x00, 0x41, 0x22, 0x1C, 0x00,// 29 )
-	0x14, 0x08, 0x3E, 0x08, 0x14,// 2a *
-	0x08, 0x08, 0x3E, 0x08, 0x08,// 2b +
-	0x00, 0x50, 0x30, 0x00, 0x00,// 2c ,
-	0x08, 0x08, 0x08, 0x08, 0x08,// 2d -
-	0x00, 0x60, 0x60, 0x00, 0x00,// 2e .
-	0x20, 0x10, 0x08, 0x04, 0x02,// 2f /
-	0x3E, 0x51, 0x49, 0x45, 0x3E,// 30 0
-	0x00, 0x42, 0x7F, 0x40, 0x00,// 31 1
-	0x42, 0x61, 0x51, 0x49, 0x46,// 32 2
-	0x21, 0x41, 0x45, 0x4B, 0x31,// 33 3
-	0x18, 0x14, 0x12, 0x7F, 0x10,// 34 4
-	0x27, 0x45, 0x45, 0x45, 0x39,// 35 5
-	0x3C, 0x4A, 0x49, 0x49, 0x30,// 36 6
-	0x01, 0x71, 0x09, 0x05, 0x03,// 37 7
-	0x36, 0x49, 0x49, 0x49, 0x36,// 38 8
-	0x06, 0x49, 0x49, 0x29, 0x1E,// 39 9
-	0x00, 0x36, 0x36, 0x00, 0x00,// 3a :
-	0x00, 0x56, 0x36, 0x00, 0x00,// 3b ;
-	0x08, 0x14, 0x22, 0x41, 0x00,// 3c <
-	0x14, 0x14, 0x14, 0x14, 0x14,// 3d =
-	0x00, 0x41, 0x22, 0x14, 0x08,// 3e >
-	0x02, 0x01, 0x51, 0x09, 0x06,// 3f ?
-	0x32, 0x49, 0x79, 0x41, 0x3E,// 40 @
-	0x7E, 0x11, 0x11, 0x11, 0x7E,// 41 A
-	0x7F, 0x49, 0x49, 0x49, 0x36,// 42 B
-	0x3E, 0x41, 0x41, 0x41, 0x22,// 43 C
-	0x7F, 0x41, 0x41, 0x22, 0x1C,// 44 D
-	0x7F, 0x49, 0x49, 0x49, 0x41,// 45 E
-	0x7F, 0x09, 0x09, 0x09, 0x01,// 46 F
-	0x3E, 0x41, 0x49, 0x49, 0x7A,// 47 G
-	0x7F, 0x08, 0x08, 0x08, 0x7F,// 48 H
-	0x00, 0x41, 0x7F, 0x41, 0x00,// 49 I
-	0x20, 0x40, 0x41, 0x3F, 0x01,// 4a J
-	0x7F, 0x08, 0x14, 0x22, 0x41,// 4b K
-	0x7F, 0x40, 0x40, 0x40, 0x40,// 4c L
-	0x7F, 0x02, 0x0C, 0x02, 0x7F,// 4d M
-	0x7F, 0x04, 0x08, 0x10, 0x7F,// 4e N
-	0x3E, 0x41, 0x41, 0x41, 0x3E,// 4f O
-	0x7F, 0x09, 0x09, 0x09, 0x06,// 50 P
-	0x3E, 0x41, 0x51, 0x21, 0x5E,// 51 Q
-	0x7F, 0x09, 0x19, 0x29, 0x46,// 52 R
-	0x46, 0x49, 0x49, 0x49, 0x31,// 53 S
-	0x01, 0x01, 0x7F, 0x01, 0x01,// 54 T
-	0x3F, 0x40, 0x40, 0x40, 0x3F,// 55 U
-	0x1F, 0x20, 0x40, 0x20, 0x1F,// 56 V
-	0x3F, 0x40, 0x38, 0x40, 0x3F,// 57 W
-	0x63, 0x14, 0x08, 0x14, 0x63,// 58 X
-	0x07, 0x08, 0x70, 0x08, 0x07,// 59 Y
-	0x61, 0x51, 0x49, 0x45, 0x43,// 5a Z
-	0x00, 0x7F, 0x41, 0x41, 0x00,// 5b [
-	0x02, 0x04, 0x08, 0x10, 0x20,// 5c Yen Currency Sign
-	0x00, 0x41, 0x41, 0x7F, 0x00,// 5d ]
-	0x04, 0x02, 0x01, 0x02, 0x04,// 5e ^
-	0x40, 0x40, 0x40, 0x40, 0x40,// 5f _
-	0x00, 0x01, 0x02, 0x04, 0x00,// 60 `
-	0x20, 0x54, 0x54, 0x54, 0x78,// 61 a
-	0x7F, 0x48, 0x44, 0x44, 0x38,// 62 b
-	0x38, 0x44, 0x44, 0x44, 0x20,// 63 c
-	0x38, 0x44, 0x44, 0x48, 0x7F,// 64 d
-	0x38, 0x54, 0x54, 0x54, 0x18,// 65 e
-	0x08, 0x7E, 0x09, 0x01, 0x02,// 66 f
-	0x0C, 0x52, 0x52, 0x52, 0x3E,// 67 g
-	0x7F, 0x08, 0x04, 0x04, 0x78,// 68 h
-	0x00, 0x44, 0x7D, 0x40, 0x00,// 69 i
-	0x20, 0x40, 0x44, 0x3D, 0x00,// 6a j
-	0x7F, 0x10, 0x28, 0x44, 0x00,// 6b k
-	0x00, 0x41, 0x7F, 0x40, 0x00,// 6c l
-	0x7C, 0x04, 0x18, 0x04, 0x78,// 6d m
-	0x7C, 0x08, 0x04, 0x04, 0x78,// 6e n
-	0x38, 0x44, 0x44, 0x44, 0x38,// 6f o
-	0x7C, 0x14, 0x14, 0x14, 0x08,// 70 p
-	0x08, 0x14, 0x14, 0x18, 0x7C,// 71 q
-	0x7C, 0x08, 0x04, 0x04, 0x08,// 72 r
-	0x08, 0x54, 0x54, 0x54, 0x20,// 73 s
-	0x04, 0x3F, 0x44, 0x40, 0x20,// 74 t
-	0x3C, 0x40, 0x40, 0x20, 0x7C,// 75 u
-	0x1C, 0x20, 0x40, 0x20, 0x1C,// 76 v
-	0x3C, 0x40, 0x30, 0x40, 0x3C,// 77 w
-	0x44, 0x28, 0x10, 0x28, 0x44,// 78 x
-	0x0C, 0x50, 0x50, 0x50, 0x3C,// 79 y
-	0x44, 0x64, 0x54, 0x4C, 0x44,// 7a z
-	0x00, 0x08, 0x36, 0x41, 0x00,// 7b <
-	0x00, 0x00, 0x7F, 0x00, 0x00,// 7c |
-	0x00, 0x41, 0x36, 0x08, 0x00,// 7d >
-	0x10, 0x08, 0x08, 0x10, 0x08,// 7e Right Arrow ->
-	0x78, 0x46, 0x41, 0x46, 0x78,// 7f Left Arrow <-
-	//-- 127
-	//-- 192 Cyrillic
-	0x7E, 0x11, 0x11, 0x11, 0x7E,// C0 ?
-	0x7F, 0x49, 0x49, 0x49, 0x31,// C1 ?
-	0x7F, 0x49, 0x49, 0x49, 0x36,// C2 ?
-	0x7F, 0x01, 0x01, 0x01, 0x03,// C3 ?
-	0x60, 0x3E, 0x21, 0x21, 0x7F,// C4 ?
-	0x7F, 0x49, 0x49, 0x49, 0x41,// C5 ?
-	0x77, 0x08, 0x7F, 0x08, 0x77,// C6 ?
-	0x22, 0x41, 0x49, 0x49, 0x36,// C7 ?
-	0x7F, 0x10, 0x08, 0x04, 0x7F,// C8 ?
-	0x7F, 0x10, 0x09, 0x04, 0x7F,// C9 ?
-	0x7F, 0x08, 0x14, 0x22, 0x41,// CA ?
-	0x40, 0x3E, 0x01, 0x01, 0x7F,// CB ?
-	0x7F, 0x02, 0x0C, 0x02, 0x7F,// CC ?
-	0x7F, 0x08, 0x08, 0x08, 0x7F,// CD ?
-	0x3E, 0x41, 0x41, 0x41, 0x3E,// CE ?
-	0x7F, 0x01, 0x01, 0x01, 0x7F,// CF ?
-	0x7F, 0x09, 0x09, 0x09, 0x06,// D0 ?
-	0x3E, 0x41, 0x41, 0x41, 0x22,// D1 ?
-	0x01, 0x01, 0x7F, 0x01, 0x01,// D2 ?
-	0x27, 0x48, 0x48, 0x48, 0x3F,// D3 ?
-	0x1E, 0x21, 0x7F, 0x21, 0x1E,// D4 ?
-	0x63, 0x14, 0x08, 0x14, 0x63,// D5 ?
-	0x3F, 0x20, 0x20, 0x3F, 0x60,// D6 ?
-	0x07, 0x08, 0x08, 0x08, 0x7F,// D7 ?
-	0x7F, 0x40, 0x7F, 0x40, 0x7F,// D8 ?
-	0x3F, 0x20, 0x3F, 0x20, 0x7F,// D9 ?
-	0x01, 0x7F, 0x48, 0x48, 0x30,// DA ?
-	0x7F, 0x48, 0x30, 0x00, 0x7F,// DB ?
-	0x00, 0x7F, 0x48, 0x48, 0x30,// DC ?
-	0x22, 0x41, 0x49, 0x49, 0x3E,// DD ?
-	0x7F, 0x08, 0x3E, 0x41, 0x3E,// DE ?
-	0x46, 0x29, 0x19, 0x09, 0x7F,// DF ?
-	0x20, 0x54, 0x54, 0x54, 0x78,// E0 ?
-	0x3C, 0x4A, 0x4A, 0x4A, 0x30,// E1 ?
-	0x7C, 0x54, 0x54, 0x28, 0x00,// E2 ?
-	0x7C, 0x04, 0x04, 0x04, 0x04,// E3 ?
-	0x60, 0x38, 0x24, 0x24, 0x7C,// E4 ?
-	0x38, 0x54, 0x54, 0x54, 0x18,// E5 ?
-	0x6C, 0x10, 0x7C, 0x10, 0x6C,// E6 ?
-	0x00, 0x44, 0x54, 0x54, 0x28,// E7 ?
-	0x7C, 0x20, 0x10, 0x08, 0x7C,// E8 ?
-	0x7C, 0x21, 0x12, 0x09, 0x7C,// E9 ?
-	0x7C, 0x10, 0x28, 0x44, 0x00,// EA
-	0x40, 0x38, 0x04, 0x04, 0x7C,// EB
-	0x7C, 0x08, 0x10, 0x08, 0x7C,// EC
-	0x7C, 0x10, 0x10, 0x10, 0x7C,// ED
-	0x38, 0x44, 0x44, 0x44, 0x38,// EE
-	0x7C, 0x04, 0x04, 0x04, 0x7C,// EF
-	0x7C, 0x14, 0x14, 0x14, 0x08,// F0
-	0x38, 0x44, 0x44, 0x44, 0x00,// F1
-	0x04, 0x04, 0x7C, 0x04, 0x04,// F2
-	0x0C, 0x50, 0x50, 0x50, 0x3C,// F3
-	0x08, 0x14, 0x7C, 0x14, 0x08,// F4
-	0x44, 0x28, 0x10, 0x28, 0x44,// F5
-	0x3C, 0x20, 0x20, 0x3C, 0x60,// F6
-	0x0C, 0x10, 0x10, 0x10, 0x7C,// F7
-	0x7C, 0x40, 0x7C, 0x40, 0x7C,// F8
-	0x3C, 0x20, 0x3C, 0x20, 0x7C,// F9
-	0x04, 0x7C, 0x50, 0x50, 0x20,// FA
-	0x7C, 0x50, 0x20, 0x00, 0x7C,// FB
-	0x00, 0x7C, 0x50, 0x50, 0x20,// FC
-	0x28, 0x44, 0x54, 0x54, 0x38,// FD
-	0x7C, 0x10, 0x38, 0x44, 0x38,// FE
-	0x48, 0x54, 0x34, 0x14, 0x7C // FF
-	// -- 255
-};
+	OLED_StatusTypeDef Result = OLED_OK;
 
+	OLED->DataSend = OLED_SendData;
+	OLED->AddressI2C = OLED_ADRESS;
+	OLED->Heigth = OLED_096_PAGES;
+	OLED->Width = OLED_096_SEGS;
+	OLED->Cursor = NULL;
 
-void sendCommand(uint8_t command_s)
-{
-	uint8_t BufferCommand[2];
-	BufferCommand[0] = COMMAND;
-	BufferCommand[1] = command_s;
+	Result = OLED_SetDisplayOnOff(OLED, SSD1306_DISPLAY_OFF);
+	Result = OLED_Set_ChargePumpOnOff(OLED, SSD1306_CHARGEPUMP_OFF);
+	Result = OLED_Set_Display_ClockDiv(OLED, SSD1306_CLOCKFREQ_MAX);
+	Result = OLED_Set_MultiplexRatio(OLED, SSD1306_MULTIPLEXRATIO_DEFAULT);
+	Result = OLED_Set_DisplayOffset(OLED, SSD1306_DISPLAYOFFSET_LOWCOLUMN);
+	Result = OLED_Set_StartLine(OLED, SSD1306_STARTLINE_DEFAULT);
+	Result = OLED_Set_MemoryMode(OLED, SSD1306_MEMORYMODE_HORISONTAL);
+	Result = OLED_Set_SegRemap(OLED, SSD1306_SEGREMAP_127_SEG0);
+	Result = OLED_Set_ComScanDir(OLED, SSD1306_COMSCANDEC);
+	Result = OLED_Set_ComPins(OLED, SSD1306_COMPINS_DEFAULT);
+	Result = OLED_SetContrast(OLED, OLED_SETCONTRAST_MAX);
+	Result = OLED_Set_PreCharge(OLED);
+	Result = OLED_Set_VComDetect(OLED, SSD1306_SETVCOMDETECT_MID);
+	Result = OLED_Set_Display_Use_GDDRAM(OLED);
+	Result = OLED_Set_Display_ColorMode(OLED, SSD1306_COLORS_NON_INV);
+	Result = OLED_Set_ChargePumpOnOff(OLED, SSD1306_CHARGEPUMP_ON);
+	Result = OLED_SetDisplayOnOff(OLED, SSD1306_DISPLAY_ON);
 
-	HAL_I2C_Master_Transmit(&hi2c1,OLED_adress,BufferCommand,2,100);
+	// Memory allocation for frame buffer
+	Result = OLED_FrameMem_Init (OLED);
+
+	OLED->FrameSize = OLED_096_PAGES * OLED_096_SEGS;
+
+	Result = OLED_GDDR_Clear(OLED);
+	if(Result != OLED_OK){
+		  OLED_ErrorHandler(OLED);
+	}
+
+	Result = OLED_Set_Cursor(OLED,0,0);
+
+	return Result;
 }
 
+/**
+ * @brief Function deinitialize &OLED and frees it's FrameMem
+ *
+ * @returns  Status of operation
+ * 			 default 			: OLED_OK
+ *			 OLED_ERROR 		: FrameMem is not initialized(NULL)
+ *
+ * @[IN]data &OLED - Display object
+ *
+ */
+OLED_StatusTypeDef OLED_DeInit(OLED_HandleTypeDef* OLED){
+	OLED_StatusTypeDef Result = OLED_OK;
+	Result = OLED_SetDisplayOnOff(OLED, SSD1306_DISPLAY_OFF);
+	Result = OLED_FrameMem_DeInit (OLED);
+	HAL_I2C_DeInit(&hi2c1);
+	MX_I2C1_Init();
+	return Result;
+}
+
+
+
+/**
+ * @brief Function refreshes OLED screen with current frame stored in &OLED
+ *
+ * @returns  Status of operation
+ * 			 default : Same as HAL_I2C_Mem_Write
+ *			 4 		: Transmit error
+ *
+ * @[IN]data &OLED - Display object
+ *
+ */
+OLED_StatusTypeDef OLED_FrameRefresh (OLED_HandleTypeDef *OLED){
+	OLED_StatusTypeDef Result = OLED_OK;
+	if(OLED->FrameMem == NULL){
+		return OLED_ERROR;
+	}
+	Result = OLED->DataSend(DATA, OLED->AddressI2C, OLED->FrameMem, OLED->FrameSize);
+	return Result;
+}
+
+
+/**
+ * @brief Function fills &OLED frame with test image
+ *
+ * @returns  Status of operation
+ * 			 default    : OLED_OK
+ *			 OLED_ERROR : FrameMem is not initialized(NULL)
+ *
+ * @[IN]data &OLED - Display object
+ *
+ */
+OLED_StatusTypeDef OLED_DrawTestImage(OLED_HandleTypeDef *OLED){
+	if(OLED->FrameMem == NULL){
+		return OLED_ERROR;
+	}
+
+	uint8_t t = 0;
+	uint8_t squares_count = 0;
+	uint8_t tempBuf = 0;
+	for (size_t i = 0; i < OLED->FrameSize; i++)
+	{
+
+		if(t == 8)
+		{
+			tempBuf = ~tempBuf;
+			t = 0;
+			squares_count++;
+		}
+		if(squares_count == 16)
+		{
+			squares_count = 0;
+			tempBuf = ~tempBuf;
+		}
+
+		*(OLED->FrameMem + i) = tempBuf;
+		t++;
+
+	}
+	return OLED_OK;
+}
+
+/**
+ * @brief Function sets display on/off
+ *
+ * @returns necessary 0 for correct execution
+ *
+ * @[IN]data &OLED - Display object
+ * @[IN]data value - ssd1206_display_on_off_t CMD
+ *
+ */
+OLED_StatusTypeDef OLED_SetDisplayOnOff(OLED_HandleTypeDef *OLED, ssd1306_display_on_off_t value){
+	OLED_StatusTypeDef Result = OLED_OK;
+	Result = OLED->DataSend(COMMAND, OLED->AddressI2C, (uint8_t *) &value, 1);
+	return Result;
+}
 /*
+ *
+ * End function NAME_FUNCTION
+ *
+ */
+
+/**
+ * @brief Function sets OLED contrast to desired value
+ *
+ * @returns  Nothing
+ *
+ * @[IN]data uint8_t	 Desired contrast value (0-255)
+ *
+ */
+OLED_StatusTypeDef OLED_SetContrast(OLED_HandleTypeDef* OLED, uint8_t value)
+{
+	OLED_StatusTypeDef Result = OLED_OK;
+	uint8_t tempBuf = OLED_SETCONTRAST;
+
+	Result = OLED->DataSend(COMMAND, OLED->AddressI2C, &tempBuf, 1);
+	Result = OLED->DataSend(COMMAND, OLED->AddressI2C, &value, 1);
+
+	return Result;
+}
+
+/**
+ * @brief Function sets OLED clock division
+ *
+ * @returns  Nothing
+ *
+ * @[IN]data &OLED - Display object
+ * @[IN]data value - ssd1306_display_clock_freq_t CMD
+ *
+ */
+OLED_StatusTypeDef OLED_Set_Display_ClockDiv(OLED_HandleTypeDef* OLED, ssd1306_display_clock_freq_t value)
+{
+	OLED_StatusTypeDef Result = OLED_OK;
+	uint8_t tempBuf = OLED_SETDISPLAYCLOCKDIV;
+
+	Result = OLED->DataSend(COMMAND, OLED->AddressI2C, &tempBuf, 1);
+
+	Result = OLED->DataSend(COMMAND, OLED->AddressI2C, (uint8_t *) &value, 1);
+	return Result;
+}
+
+/**
+ * @brief Function sets OLED color mode
+ *
+ * @returns  Nothing
+ *
+ * @[IN]data &OLED - Display object
+ * @[IN]data value - ssd1306_display_clock_freq_t CMD
+ *
+ */
+OLED_StatusTypeDef OLED_Set_Display_ColorMode(OLED_HandleTypeDef* OLED, ssd1306_display_color_t value)
+{
+	OLED_StatusTypeDef Result = OLED_OK;
+
+	Result = OLED->DataSend(COMMAND, OLED->AddressI2C, (uint8_t *) &value, 1);
+
+	return Result;
+}
+
+/**
+ * @brief Function forces OLED to use data in GDDRAM to display image
+ *
+ * @returns  Nothing
+ *
+ * @[IN]data &OLED - Display object
+ *
+ */
+OLED_StatusTypeDef OLED_Set_Display_Use_GDDRAM(OLED_HandleTypeDef* OLED)
+{
+	OLED_StatusTypeDef Result = OLED_OK;
+	uint8_t tempBuf = OLED_DISPLAYALLON;
+
+	Result = OLED->DataSend(COMMAND, OLED->AddressI2C, &tempBuf, 1);
+
+	tempBuf = OLED_DISPLAYALLON_RESUME;
+	Result = OLED->DataSend(COMMAND, OLED->AddressI2C, &tempBuf, 1);
+
+	return Result;
+}
+
+/**
+ * @brief Function sets OLED charge pump state
+ *
+ * @returns  Nothing
+ *
+ * @[IN]data &OLED - Display object
+ * @[IN]data value - ssd1306_ssd1306_chargepump_state_t CMD
+ *
+ */
+OLED_StatusTypeDef OLED_Set_ChargePumpOnOff(OLED_HandleTypeDef* OLED, ssd1306_chargepump_state_t value)
+{
+	OLED_StatusTypeDef Result = OLED_OK;
+	uint8_t tempBuf = OLED_CHARGEPUMP;
+
+	Result = OLED->DataSend(COMMAND, OLED->AddressI2C, &tempBuf, 1);
+	Result = OLED->DataSend(COMMAND, OLED->AddressI2C, (uint8_t *) &value, 1);
+
+	return Result;
+}
+
+/**
+ * @brief Function sets OLED tv com detect state
+ *
+ * @returns  Nothing
+ *
+ * @[IN]data &OLED - Display object
+ * @[IN]data value - ssd1306_sevcomdetect_state_t CMD
+ *
+ */
+OLED_StatusTypeDef OLED_Set_VComDetect(OLED_HandleTypeDef* OLED, ssd1306_vcomdetect_state_t value)
+{
+	OLED_StatusTypeDef Result = OLED_OK;
+	uint8_t tempBuf = OLED_SETVCOMDETECT;
+
+	Result = OLED->DataSend(COMMAND, OLED->AddressI2C, &tempBuf, 1);
+	Result = OLED->DataSend(COMMAND, OLED->AddressI2C, (uint8_t *) &value, 1);
+
+	return Result;
+}
+
+/**
+ * @brief Function sets OLED precharge state
+ *
+ * @returns  Nothing
+ *
+ * @[IN]data &OLED - Display object
+ *
+ */
+OLED_StatusTypeDef OLED_Set_PreCharge(OLED_HandleTypeDef* OLED)
+{
+	OLED_StatusTypeDef Result = OLED_OK;
+	uint8_t tempBuf = OLED_SETPRECHARGE;
+
+	Result = OLED->DataSend(COMMAND, OLED->AddressI2C, &tempBuf, 1);
+	tempBuf = OLED_SETPRECHARGE_PHASE_1 | OLED_SETPRECHARGE_PHASE_2;
+	Result = OLED->DataSend(COMMAND, OLED->AddressI2C, &tempBuf, 1);
+
+	return Result;
+}
+
+/**
+ * @brief Function sets OLED com scan dir
+ *
+ * @returns  Nothing
+ *
+ * @[IN]data &OLED - Display object
+ * @[IN]data value - ssd1306_setcomscan_state_t CMD
+ *
+ */
+OLED_StatusTypeDef OLED_Set_ComScanDir(OLED_HandleTypeDef* OLED, ssd1306_comscan_state_t value)
+{
+	OLED_StatusTypeDef Result = OLED_OK;
+
+	Result = OLED->DataSend(COMMAND, OLED->AddressI2C, (uint8_t *) &value, 1);
+
+	return Result;
+}
+
+/**
+ * @brief Function sets OLED segment remap
+ *
+ * @returns  Nothing
+ *
+ * @[IN]data &OLED - Display object
+ * @[IN]data value - ssd1306_setsegremap_state_t CMD
+ *
+ */
+OLED_StatusTypeDef OLED_Set_SegRemap(OLED_HandleTypeDef* OLED, ssd1306_segremap_state_t value)
+{
+	OLED_StatusTypeDef Result = OLED_OK;
+
+	Result = OLED->DataSend(COMMAND, OLED->AddressI2C, (uint8_t *) &value, 1);
+
+	return Result;
+}
+
+/**
+ * @brief Function sets OLED memory mode
+ *
+ * @returns  Nothing
+ *
+ * @[IN]data &OLED - Display object
+ * @[IN]data value - ssd1306_memorymode_state_t CMD
+ *
+ */
+OLED_StatusTypeDef OLED_Set_MemoryMode(OLED_HandleTypeDef* OLED, ssd1306_memorymode_state_t value)
+{
+	OLED_StatusTypeDef Result = OLED_OK;
+	uint8_t tempBuf = OLED_MEMORYMODE;
+
+	Result = OLED->DataSend(COMMAND, OLED->AddressI2C, &tempBuf, 1);
+	Result = OLED->DataSend(COMMAND, OLED->AddressI2C, (uint8_t *) &value, 1);
+
+	return Result;
+}
+
+/**
+ * @brief Function sets OLED offset
+ *
+ * @returns  Nothing
+ *
+ * @[IN]data &OLED - Display object
+ * @[IN]data value - ssd1306_displayoffset_state_t CMD
+ *
+ */
+OLED_StatusTypeDef OLED_Set_DisplayOffset(OLED_HandleTypeDef* OLED, ssd1306_displayoffset_state_t value)
+{
+	OLED_StatusTypeDef Result = OLED_OK;
+	uint8_t tempBuf = OLED_SETDISPLAYOFFSET;
+
+	Result = OLED->DataSend(COMMAND, OLED->AddressI2C, &tempBuf, 1);
+	Result = OLED->DataSend(COMMAND, OLED->AddressI2C, (uint8_t *) &value, 1);
+
+	return Result;
+}
+
+/**
+ * @brief Function sets OLED start line offset
+ *
+ * @returns  Nothing
+ *
+ * @[IN]data &OLED - Display object
+ * @[IN]data value - ssd1306_startline_state_t CMD
+ *
+ */
+OLED_StatusTypeDef OLED_Set_StartLine(OLED_HandleTypeDef* OLED, ssd1306_startline_state_t value)
+{
+	OLED_StatusTypeDef Result = OLED_OK;
+
+	Result = OLED->DataSend(COMMAND, OLED->AddressI2C, (uint8_t *) &value, 1);
+
+	return Result;
+}
+
+/**
+ * @brief Function sets OLED sets multiplex ratio
+ *
+ * @returns  Nothing
+ *
+ * @[IN]data &OLED - Display object
+ *
+ */
+OLED_StatusTypeDef OLED_Set_MultiplexRatio(OLED_HandleTypeDef* OLED, ssd1306_multiplex_state_t value)
+{
+	OLED_StatusTypeDef Result = OLED_OK;
+	uint8_t tempBuf = OLED_SETMULTIPLEX;
+
+	Result = OLED->DataSend(COMMAND, OLED->AddressI2C, &tempBuf, 1);
+	Result = OLED->DataSend(COMMAND, OLED->AddressI2C, (uint8_t *) &value, 1);
+
+	return Result;
+}
+
+/**
+ * @brief Function sets OLED com pins
+ *
+ * @returns  Nothing
+ *
+ * @[IN]data &OLED - Display object
+ *
+ */
+OLED_StatusTypeDef OLED_Set_ComPins(OLED_HandleTypeDef* OLED, ssd1306_compins_state_t value)
+{
+	OLED_StatusTypeDef Result = OLED_OK;
+	uint8_t tempBuf = OLED_SETCOMPINS;
+
+	Result = OLED->DataSend(COMMAND, OLED->AddressI2C, &tempBuf, 1);
+	Result = OLED->DataSend(COMMAND, OLED->AddressI2C, (uint8_t *) &value, 1);
+
+	return Result;
+}
+
+/**
+ *
+ *
+ * @brief API tool for cursor positioning
+ *
+ * @param &OLED - Display object
+ * 		  Byte, Page - coordinates
+ *
+ * @returns bool status of error handling
+ *
+ */
+OLED_StatusTypeDef OLED_Set_Cursor(OLED_HandleTypeDef* OLED, uint8_t Byte, uint8_t Page)
+{
+	OLED_StatusTypeDef Result = OLED_OK;
+	uint8_t tempBuf = OLED_SET_ADDR_PAGE_MODE + Page;
+
+	OLED->DataSend(COMMAND, OLED->AddressI2C, &tempBuf, 1);
+	tempBuf = Byte & OLED_SET_CLMN_PAGE_MODE_L;
+	OLED->DataSend(COMMAND, OLED->AddressI2C, &tempBuf, 1);
+	tempBuf = OLED_SET_CLMN_PAGE_MODE_H | (Byte >> 4);
+	OLED->DataSend(COMMAND, OLED->AddressI2C, &tempBuf, 1);
+
+	return Result;
+}
+
+
+
+// Очистку экрана лучше всего делать с помощью отправки по i2c нулевого байта
+// с DMA без автоинкремента
+static OLED_StatusTypeDef OLED_GDDR_Clear (OLED_HandleTypeDef* OLED){
+	OLED_StatusTypeDef Result = OLED_OK;
+	uint8_t tempBuf = 0;
+	for (uint16_t i = 0; i < (OLED->Heigth) * (OLED->Width); i++){
+		Result = OLED_SendData (DATA, OLED->AddressI2C, &tempBuf, 1);
+	}
+	return Result;
+}
+
+
+/**
+ *
+ *
+ * @brief Error management routine
+ *
+ * @returns bool status of error handling
+ *
+ */
+static OLED_ErrorHandlerType OLED_ErrorHandler (OLED_HandleTypeDef * OLED){
+
+	OLED_DeInit(OLED);
+	if(OLED_Init(OLED) != OLED_OK && OLED->OLEDErrorSolvingTrials < OLED_MAX_TRIALS){
+		OLED->OLEDErrorSolvingTrials++;
+		return OLED_ErrorHandler(OLED);
+	}
+	else{
+		return HANDLE_FAULT;
+	}
+	OLED->OLEDErrorSolvingTrials = 0;
+	return HANDLE_SUCCESS;
+}
+
+/**
+ * @brief Function initializes &OLED FrameMem
+ *
+ * @returns  Status of operation
+ * 			 default 			: OLED_OK
+ *			 OLED_ERROR 		: malloc error
+ *
+ * @[IN]data &OLED - Display object
+ *
+ */
+static OLED_StatusTypeDef OLED_FrameMem_Init (OLED_HandleTypeDef * OLED){
+	OLED->FrameMem = malloc(OLED_096_PAGES * OLED_096_SEGS);
+	if(OLED->FrameMem == NULL){
+		return OLED_ERROR;
+	}
+	return OLED_OK;
+}
+
+/**
+ * @brief Function deinitialize &OLED FrameMem
+ *
+ * @returns  Status of operation
+ * 			 default 			: OLED_OK
+ *			 OLED_ERROR 		: FrameMem is not initialized(NULL)
+ *
+ * @[IN]data &OLED - Display object
+ *
+ */
+static OLED_StatusTypeDef OLED_FrameMem_DeInit (OLED_HandleTypeDef * OLED){
+	if(OLED->FrameMem == NULL){
+		return OLED_ERROR;
+	}
+	free(OLED->FrameMem);
+	return OLED_OK;
+}
+
+
+/**
  * @brief Function sends data to OLED unit
  *
  * @returns  Status of operation
@@ -211,222 +637,16 @@ void sendCommand(uint8_t command_s)
  * @[IN]data (enum Data/Command) Descriptor
  * 			 uint8_t 			 Data to send
  */
-OLED_StatusTypeDef OLED_SendData (OLED_DataType Descriptor, const uint8_t * Data){
+static OLED_StatusTypeDef OLED_SendData (OLED_DataType Descriptor, uint8_t AddressI2C, uint8_t *Data, size_t length){
+
 	OLED_StatusTypeDef Result = OLED_OK;
 
 	if(Descriptor == DATA || Descriptor == COMMAND){
-		uint8_t BufferData[2];
-		BufferData[0] = Descriptor;
-		BufferData[1] = *Data;
-
-		Result = HAL_I2C_Master_Transmit(&hi2c1,OLED_adress,BufferData,2,100);
+		Result = HAL_I2C_Mem_Write(&hi2c1, (uint16_t)AddressI2C, (uint16_t)Descriptor, I2C_MEMADD_SIZE_8BIT, Data, length,100);
 	}
 	else{
 		Result = OLED_DESCFAIL;
 	}
 
 	return Result;
-}
-
-
-void sendData(uint8_t data_s)
-{
-	uint8_t BufferData[2];
-	BufferData[0] = DATA;
-	BufferData[1] = data_s;
-
-	HAL_I2C_Master_Transmit(&hi2c1,OLED_adress,BufferData,2,100);
-}
-
-void LCD_Goto(unsigned char x, unsigned char y)
-{
-	LCD_X = x;
-	LCD_Y = y;
-	sendCommand(0xB0 + y);
-	sendCommand(x & 0xf);
-	sendCommand(0x10 | (x >> 4));
-}
-
-/*
- * @brief Function set's all of display colors to black
- *
- * @returns  Nothing
- *
- */
-void LCD_Clear(void)
-{
-	uint8_t temp_buffer[9] = {0,0,0,0,0,0,0,0,0};
-
-	temp_buffer[0] = DATA;
-
-	LCD_Goto(0,0);
-	for (LCD_Y=1; LCD_Y < (OLED_HEIGHT/8); LCD_Y++)
-	{
-		for(LCD_X=0; LCD_X < (OLED_WIDTH/8); LCD_X++)
-		{
-			HAL_I2C_Master_Transmit(&hi2c1, OLED_adress, temp_buffer, 9,1000);
-		}
-		LCD_Goto(0,LCD_Y);
-	}
-
-	LCD_X = OLED_DEFAULT_SPACE;
-	LCD_Y = 0;
-	LCD_Goto(0,OLED_DEFAULT_SPACE);
-}
-
-/*
- * @brief Function sets OLED contrast to desired value
- *
- * @returns  Nothing
- *
- * @[IN]data uint8_t	 Desired contrast value (0-255)
- *
- */
-void Set_Contrast(uint8_t value)
-{
-	sendCommand(OLED_SETCONTRAST);
-	sendCommand(value);
-}
-
-/*
- * @brief Function returns offset for matching ASCII
- * input with LCD_Buffer
- *
- * @returns  Offset
- *
- * @[IN]data uint8_t	 Default ASCII character
- *
- */
-uint8_t Char_to_buffer_offset(uint8_t chr)
-{
-	if(chr >= 32 && chr <= 127)
-		return 32;
-	if(chr >= 192 && chr <= 255)
-		return 95;
-	return 0;
-}
-
-//Функция выводит 6 байт в GDDRAM OLED 7 байт - межсимвольный интервал,
-//Переписать функцию чтобы она работала с кадром а не с дисплеем напрямую
-
-void LCD_Char(uint8_t c)
-{
-	uint8_t x = 0;
-	temp_char[0] = DATA; 	// DATA descriptor
-	uint8_t offset = Char_to_buffer_offset(c);
-
-	if(!offset) return; //If desired char is not presented in Font_6x6_RuEng exit the function
-
-	for (x=0; x<5; x++)
-	{
-		temp_char[x+1] = Font_6x6_RuEng[c*5-5*offset+x];
-	}
-	temp_char[6] = 0;
-	HAL_I2C_Master_Transmit(&hi2c1, OLED_adress, temp_char, 7,1000);
-
-	LCD_X += 6;
-	if(LCD_X>=OLED_WIDTH-2)
-	{
-		if(LCD_Y > 6){
-			LCD_Y = 0;
-		}
-		else{
-			LCD_Y++;
-		}
-		LCD_X = OLED_DEFAULT_SPACE;
-		LCD_Goto(LCD_X,LCD_Y);
-	}
-}
-
-
-void OLED_string(char *string)
-{
-	while(*string != '\0')
-	{
-		LCD_Char(*string);
-		string++;
-	}
-}
-
-/*
- * @returns Nothing
- *
- * @data value binary
- * @data symbols
- *
- *
- */
-void OLED_num_to_str(unsigned int value, unsigned char nDigit)
-{
-	switch(nDigit)
-	{
-		case 5: LCD_Char(value/10000+48);
-		case 4: LCD_Char((value/1000)%10+48);
-		case 3: LCD_Char((value/100)%10+48);
-		case 2: LCD_Char((value/10)%10+48);
-		case 1: LCD_Char(value%10+48);
-	}
-}
-/*
- *
- * End function NAME_FUNCTION
- *
- */
-
-void OLED_init(OLED_HandleTypeDef* oled)
-{
-
-	oled->DataSend = OLED_SendData;
-	oled->AddressI2C = 1;
-
-	// Turn display off
-	sendCommand(OLED_DISPLAYOFF);
-
-	sendCommand(OLED_SETDISPLAYCLOCKDIV);
-	sendCommand(0x80);
-
-	sendCommand(OLED_SETMULTIPLEX);
-	//sendCommand(0x1F);//128x32
-	sendCommand(0x3F);//128x64
-
-	sendCommand(OLED_SETDISPLAYOFFSET);
-	sendCommand(0x00);
-
-	sendCommand(OLED_SETSTARTLINE | 0x00);//0
-
-	// We use internal charge pump
-	sendCommand(OLED_CHARGEPUMP);
-	sendCommand(0x14);
-
-	// Horizontal memory mode
-	sendCommand(OLED_MEMORYMODE);
-	sendCommand(0x00);
-
-	sendCommand(OLED_SEGREMAP | 0x1);
-
-	sendCommand(OLED_COMSCANDEC);
-
-	sendCommand(OLED_SETCOMPINS);
-	//sendCommand(0x02);//128x32
-	sendCommand(0x12);//128x64
-
-	// Max contrast
-	sendCommand(OLED_SETCONTRAST);
-	//sendCommand(0x0F);//0xCF
-	sendCommand(0xCF);//0xCF
-
-	sendCommand(OLED_SETPRECHARGE);
-	sendCommand(0xF1);
-
-	sendCommand(OLED_SETVCOMDETECT);
-	//sendCommand(0x10);//0x40
-	sendCommand(0x40);//0x40
-
-	sendCommand(OLED_DISPLAYALLON_RESUME);
-
-	// Non-inverted display
-	sendCommand(OLED_NORMALDISPLAY);
-
-	// Turn display back on
-	sendCommand(OLED_DISPLAYON);
 }

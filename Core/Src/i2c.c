@@ -122,6 +122,15 @@ void HAL_I2C_MspDeInit(I2C_HandleTypeDef* i2cHandle)
 
 /* USER CODE BEGIN 1 */
 
+/* I2C1 deinit function */
+void MX_I2C1_DeInit(void){
+
+	if (HAL_I2C_DeInit(&hi2c1) != HAL_OK)
+	  {
+	    Error_Handler();
+	  }
+
+}
 /* USER CODE END 1 */
 
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/
