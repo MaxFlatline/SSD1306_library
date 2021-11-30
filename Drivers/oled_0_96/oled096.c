@@ -2,7 +2,7 @@
  * oled096.c
  *
  *  Created on: Sep 18, 2021
- *      Author: Maxim Hodnenko
+ *      Authors: Maxim Hodnenko, Nulliik
  */
 
 
@@ -152,8 +152,6 @@ OLED_StatusTypeDef OLED_Init(OLED_HandleTypeDef* OLED)
 	if(Result != OLED_OK){
 		  OLED_ErrorHandler(OLED);
 	}
-
-	Result = OLED_Set_Cursor(OLED,0,0);
 
 	return Result;
 }

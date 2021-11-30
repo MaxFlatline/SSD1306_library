@@ -7,7 +7,7 @@
   * @attention
   *
   *  Created on: Sep 18, 2021
-  *      Author: Maxim Hodnenko
+  *      Authors: Maxim Hodnenko, Nulliik
   *
   ******************************************************************************
   */
