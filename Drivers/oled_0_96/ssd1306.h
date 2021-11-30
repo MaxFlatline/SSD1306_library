@@ -2,7 +2,7 @@
  * ssd1306.h
  *
  *  Created on: 5 нояб. 2021 г.
- *      Author: Maximus
+ *      Author: Maxim Hodnenko, Nulliik
  */
 
 #ifndef SSD1306_H_
