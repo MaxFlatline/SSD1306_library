@@ -5,7 +5,15 @@
  *      Author: Maxim Hodnenko
  */
 
-#include <stdint.h>
+#include "fonts.h"
+
+static int CharTo_Font_6x6_RuEng_Offset (uint8_t chr){
+	if(chr >= 32 && chr <= 127)
+		return 32;
+	if(chr >= 192 && chr <= 255)
+		return 95;
+	return 0;
+}
 
 static const uint8_t Font_6x6_RuEng[0x320] =
 {
